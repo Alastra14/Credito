@@ -438,29 +438,28 @@ export default function ConfiguracionScreen() {
       </Text>
 
       <View style={styles.card}>
-        <TouchableOpacity style={styles.actionRow} onPress={handleExport} disabled={loading}>
-          <View style={[styles.iconBox, { backgroundColor: colors.primary.light }]}>
-            <Ionicons name="cloud-upload-outline" size={24} color={colors.primary.default} />
-          </View>
-          <View style={styles.actionText}>
-            <Text style={styles.actionTitle}>Exportar copia de seguridad</Text>
-            <Text style={styles.actionSubtitle}>Guarda un archivo .db con todos tus datos</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.text.muted} />
-        </TouchableOpacity>
+        <View style={styles.themeContainer}>
+          <Text style={styles.inputLabel}>Opciones de Datos</Text>
+          <View style={styles.themeRow}>
+            <TouchableOpacity
+              style={[styles.themeButton, { flex: 1 }]}
+              onPress={handleExport}
+              disabled={loading}
+            >
+              <Ionicons name="cloud-upload-outline" size={24} color={colors.text.primary} />
+              <Text style={styles.themeText}>Exportar</Text>
+            </TouchableOpacity>
 
-        <View style={styles.divider} />
-
-        <TouchableOpacity style={styles.actionRow} onPress={handleImport} disabled={loading}>
-          <View style={[styles.iconBox, { backgroundColor: colors.warning.light }]}>
-            <Ionicons name="cloud-download-outline" size={24} color={colors.warning.default} />
+            <TouchableOpacity
+              style={[styles.themeButton, { flex: 1 }]}
+              onPress={handleImport}
+              disabled={loading}
+            >
+              <Ionicons name="cloud-download-outline" size={24} color={colors.text.primary} />
+              <Text style={styles.themeText}>Restaurar</Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.actionText}>
-            <Text style={styles.actionTitle}>Restaurar copia de seguridad</Text>
-            <Text style={styles.actionSubtitle}>Importa un archivo .db previamente exportado</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.text.muted} />
-        </TouchableOpacity>
+        </View>
       </View>
     </>
   );
