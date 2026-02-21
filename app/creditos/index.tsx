@@ -4,19 +4,21 @@ import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import CreditoList from '@/components/creditos/CreditoList';
 import { CreditoConPagos } from '@/types';
-import { getCreditos, getCreditoById } from '@/lib/database';
-import { colors, spacing, borderRadius, shadow } from '@/lib/theme';
+import { getCreditosConPagos } from '@/lib/database';
+import { spacing, borderRadius, shadow } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 
 export default function CreditosScreen() {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const [creditos, setCreditos] = useState<CreditoConPagos[]>([]);
   const [loading, setLoading] = useState(true);
 
   const cargar = useCallback(async () => {
     setLoading(true);
     try {
-      const lista = await getCreditos();
-      const con = await Promise.all(lista.map(c => getCreditoById(c.id)));
-      setCreditos(con.filter(Boolean) as CreditoConPagos[]);
+      const lista = await getCreditosConPagos();
+      setCreditos(lista);
     } finally {
       setLoading(false);
     }
@@ -31,28 +33,12 @@ export default function CreditosScreen() {
         onSelect={c => router.push(`/creditos/${c.id}`)}
         onNuevo={() => router.push('/creditos/nuevo')}
       />
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push('/creditos/nuevo')}
-      >
-        <Ionicons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  fab: {
-    position: 'absolute',
-    bottom: spacing.xl,
-    right: spacing.xl,
-    width: 56,
-    height: 56,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primary.default,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadow.md,
-  },
+function getStyles(colors: any) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.surface.background },
 });
+}

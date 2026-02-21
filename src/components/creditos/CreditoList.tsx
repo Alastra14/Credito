@@ -2,9 +2,13 @@ import React, { useState } from 'react';
 import { View, FlatList, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CreditoCard from './CreditoCard';
+import Input from '../ui/Input';
 import { CreditoConPagos, TipoCredito, EstadoCredito } from '@/types';
 import { TIPOS_CREDITO, ESTADOS_CREDITO } from '@/lib/constants';
-import { colors, spacing, borderRadius, fontSize } from '@/lib/theme';
+import { spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
+
+import { useScrollHideTabBar } from '@/lib/useScrollHideTabBar';
 
 interface Props {
   creditos: CreditoConPagos[];
@@ -13,17 +17,46 @@ interface Props {
 }
 
 export default function CreditoList({ creditos, onSelect, onNuevo }: Props) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const [filtroTipo, setFiltroTipo] = useState<TipoCredito | 'todos'>('todos');
   const [filtroEstado, setFiltroEstado] = useState<EstadoCredito | 'todos'>('todos');
+  const [busqueda, setBusqueda] = useState('');
+  const { onScroll, onTouchStart, onTouchEnd, scrollEventThrottle } = useScrollHideTabBar();
 
   const filtrados = creditos.filter(c => {
     if (filtroTipo !== 'todos' && c.tipo !== filtroTipo) return false;
     if (filtroEstado !== 'todos' && c.estado !== filtroEstado) return false;
+    if (busqueda.trim() !== '') {
+      const term = busqueda.toLowerCase();
+      const matchNombre = c.nombre.toLowerCase().includes(term);
+      const matchInstitucion = c.institucion?.toLowerCase().includes(term);
+      if (!matchNombre && !matchInstitucion) return false;
+    }
     return true;
   });
 
   return (
     <View style={styles.container}>
+      {/* Buscador y Botón Agregar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchRow}>
+          <View style={styles.searchInputWrapper}>
+            <Input
+              placeholder="Buscar crédito..."
+              value={busqueda}
+              onChangeText={setBusqueda}
+              containerStyle={styles.searchInput}
+            />
+          </View>
+          {onNuevo && (
+            <TouchableOpacity style={styles.addButton} onPress={onNuevo}>
+              <Ionicons name="add" size={28} color={colors.text.primary} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       {/* Filtros de tipo */}
       <View>
         <FlatList
@@ -41,8 +74,8 @@ export default function CreditoList({ creditos, onSelect, onNuevo }: Props) {
               >
                 <Ionicons
                   name={(item.icon ?? 'help-outline') as any}
-                  size={14}
-                  color={activo ? '#fff' : colors.text.secondary}
+                  size={16}
+                  color={activo ? colors.text.inverse : colors.text.primary}
                 />
                 <Text style={[styles.chipLabel, activo && styles.chipLabelActivo]}>
                   {item.label}
@@ -103,14 +136,46 @@ export default function CreditoList({ creditos, onSelect, onNuevo }: Props) {
           )}
           contentContainerStyle={styles.lista}
           showsVerticalScrollIndicator={false}
+          onScroll={onScroll}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+          scrollEventThrottle={scrollEventThrottle}
         />
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: { flex: 1 },
+  searchContainer: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  searchInputWrapper: {
+    flex: 1,
+  },
+  searchInput: {
+    marginBottom: 0,
+  },
+  addButton: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary.default,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.text.primary,
+    ...shadow.sm,
+  },
   chips: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -120,26 +185,29 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.surface.muted,
+    gap: 6,
+    backgroundColor: colors.surface.card,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
     borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
+    ...shadow.sm,
   },
   chipPequeno: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
   },
   chipActivo: {
-    backgroundColor: colors.primary.default,
+    backgroundColor: colors.text.primary,
+    borderColor: colors.text.primary,
   },
   chipLabel: {
-    fontSize: fontSize.xs,
-    color: colors.text.secondary,
-    fontWeight: '500',
+    fontSize: 11,
+    color: colors.text.primary,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   chipLabelActivo: {
-    color: '#fff',
+    color: colors.surface.background,
   },
   lista: {
     padding: spacing.md,
@@ -153,13 +221,15 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: fontSize.lg,
-    fontWeight: '600',
+    fontWeight: '900',
     color: colors.text.primary,
+    textTransform: 'uppercase',
   },
   emptyDesc: {
     fontSize: fontSize.sm,
-    color: colors.text.muted,
+    color: colors.text.secondary,
     textAlign: 'center',
+    fontWeight: '600',
   },
   emptyBtn: {
     flexDirection: 'row',
@@ -168,13 +238,15 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.primary.default,
-    borderRadius: borderRadius.md,
+    borderWidth: 2,
+    borderColor: colors.text.primary,
+    backgroundColor: colors.primary.default,
   },
   emptyBtnLabel: {
     fontSize: fontSize.sm,
-    color: colors.primary.default,
-    fontWeight: '600',
+    color: colors.text.primary,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
 });
+}

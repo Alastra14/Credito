@@ -5,11 +5,16 @@ import CreditoForm from '@/components/creditos/CreditoForm';
 import { CreditoConPagos, CreditoFormData } from '@/types';
 import { getCreditoById, updateCredito } from '@/lib/database';
 import { cancelNotificationsForCredito, schedulePaymentReminders } from '@/lib/notifications';
-import { colors, spacing, fontSize } from '@/lib/theme';
+import { spacing, fontSize } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
+import { useScrollHideTabBar } from '@/lib/useScrollHideTabBar';
 
 export default function EditarCreditoScreen() {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const { id } = useLocalSearchParams<{ id: string }>();
   const [credito, setCredito] = useState<CreditoConPagos | null>(null);
+  const { onScroll } = useScrollHideTabBar();
 
   useEffect(() => {
     if (id) getCreditoById(id).then(setCredito);
@@ -19,12 +24,13 @@ export default function EditarCreditoScreen() {
     if (!id) return;
     await cancelNotificationsForCredito(id);
     await updateCredito(id, data);
-    if (data.fechaLimitePago && data.cuotaMensual) {
+    if ((data.fechaLimitePago || data.fechaCorte) && data.cuotaMensual !== undefined) {
       await schedulePaymentReminders(
         id,
         data.nombre,
         data.cuotaMensual,
-        data.fechaLimitePago,
+        data.fechaLimitePago ?? null,
+        data.fechaCorte ?? null,
         new Date().getMonth() + 1,
         new Date().getFullYear(),
       );
@@ -57,7 +63,12 @@ export default function EditarCreditoScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={styles.content}
+      onScroll={onScroll}
+      scrollEventThrottle={16}
+    >
       <CreditoForm
         initialData={initialData}
         onSubmit={handleSubmit}
@@ -67,9 +78,11 @@ export default function EditarCreditoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface.background },
   content: { padding: spacing.md },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loading: { fontSize: fontSize.md, color: colors.text.muted },
+  loading: { fontSize: fontSize.md, color: colors.text.secondary, fontWeight: '900', textTransform: 'uppercase' },
 });
+}

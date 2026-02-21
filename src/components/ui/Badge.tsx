@@ -4,6 +4,7 @@ import type { EstadoPago } from '@/types';
 import { estadoPagoBgColor, estadoPagoTextColor } from '@/lib/utils';
 import { ESTADOS_PAGO_LABEL } from '@/lib/constants';
 import { fontSize, borderRadius, spacing } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 
 type BadgeVariant = 'default' | 'success' | 'warning' | 'destructive' | 'info' | 'secondary';
 
@@ -14,18 +15,22 @@ interface BadgeProps {
   estado?: EstadoPago;
 }
 
-const variantStyles: Record<BadgeVariant, { bg: string; text: string }> = {
-  default:     { bg: '#E2E8F0', text: '#475569' },
-  success:     { bg: '#DCFCE7', text: '#15803D' },
-  warning:     { bg: '#FEF3C7', text: '#92400E' },
-  destructive: { bg: '#FEE2E2', text: '#B91C1C' },
-  info:        { bg: '#DBEAFE', text: '#1D4ED8' },
-  secondary:   { bg: '#F1F5F9', text: '#475569' },
-};
+function getVariantStyles(colors: any): Record<BadgeVariant, { bg: string; text: string }> {
+  return {
+    default:     { bg: colors.surface.border, text: colors.text.primary },
+    success:     { bg: colors.success.default, text: colors.success.text },
+    warning:     { bg: colors.warning.default, text: colors.warning.text },
+    destructive: { bg: colors.destructive.default, text: colors.destructive.text },
+    info:        { bg: colors.info.default, text: colors.info.text },
+    secondary:   { bg: colors.surface.inverse, text: colors.text.inverse },
+  };
+}
 
 export default function Badge({ children, label, variant = 'default', estado }: BadgeProps) {
-  const bgColor = estado ? estadoPagoBgColor(estado) : variantStyles[variant].bg;
-  const textColor = estado ? estadoPagoTextColor(estado) : variantStyles[variant].text;
+  const { colors } = useTheme();
+  const variantStyles = getVariantStyles(colors);
+  const bgColor = estado ? estadoPagoBgColor(estado, colors) : variantStyles[variant].bg;
+  const textColor = estado ? estadoPagoTextColor(estado, colors) : variantStyles[variant].text;
   const displayLabel = estado
     ? ESTADOS_PAGO_LABEL[estado]
     : (children?.toString() ?? label ?? '');
@@ -42,14 +47,16 @@ export { Badge };
 
 const styles = StyleSheet.create({
   badge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 4,
     borderRadius: borderRadius.full,
     alignSelf: 'flex-start',
   },
   text: {
-    fontSize: fontSize.xs,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });
 

@@ -3,7 +3,8 @@ import {
   View, Text, TextInput, StyleSheet,
   TextInputProps, ViewStyle,
 } from 'react-native';
-import { colors, fontSize, borderRadius, spacing } from '@/lib/theme';
+import { fontSize, borderRadius, spacing, shadow } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -13,6 +14,8 @@ interface InputProps extends TextInputProps {
 }
 
 export default function Input({ label, error, containerStyle, hint, ...props }: InputProps) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   return (
     <View style={[styles.container, containerStyle]}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
@@ -27,37 +30,44 @@ export default function Input({ label, error, containerStyle, hint, ...props }: 
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   label: {
     fontSize: fontSize.sm,
-    fontWeight: '500',
+    fontWeight: '800',
     color: colors.text.primary,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   input: {
-    height: 44,
-    borderWidth: 1,
-    borderColor: colors.surface.border,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
+    height: 56,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.lg,
     fontSize: fontSize.md,
+    fontWeight: '600',
     color: colors.text.primary,
     backgroundColor: colors.surface.card,
+    ...shadow.sm,
   },
   inputError: {
     borderColor: colors.destructive.default,
   },
   error: {
     fontSize: fontSize.xs,
+    fontWeight: '700',
     color: colors.destructive.default,
-    marginTop: 4,
+    marginTop: 6,
+    textTransform: 'uppercase',
   },
   hint: {
     fontSize: fontSize.xs,
+    fontWeight: '600',
     color: colors.text.secondary,
-    marginTop: 4,
+    marginTop: 6,
   },
 });
+}

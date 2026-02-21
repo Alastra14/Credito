@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Alert } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import CreditoForm from '@/components/creditos/CreditoForm';
 import { CreditoFormData } from '@/types';
@@ -7,8 +7,13 @@ import { createCredito } from '@/lib/database';
 import { schedulePaymentReminders } from '@/lib/notifications';
 import { spacing } from '@/lib/theme';
 import { calcularCuotaMensual } from '@/lib/calculos/amortizacion';
+import { useToast } from '@/components/ui/Toast';
+import { useScrollHideTabBar } from '@/lib/useScrollHideTabBar';
 
 export default function NuevoCreditoScreen() {
+  const { showToast } = useToast();
+  const { onScroll } = useScrollHideTabBar();
+
   async function handleSubmit(data: CreditoFormData) {
     // Calcular cuota si no se ingresó
     const cuota = data.cuotaMensual
@@ -16,25 +21,34 @@ export default function NuevoCreditoScreen() {
 
     const credito = await createCredito({ ...data, cuotaMensual: cuota });
 
-    // Programar notificaciones si tiene fecha límite de pago
-    if (credito.fechaLimitePago && credito.estado === 'activo') {
+    // Programar notificaciones si tiene fecha límite de pago o fecha de corte
+    if ((credito.fechaLimitePago || credito.fechaCorte) && credito.estado === 'activo') {
       const hoy = new Date();
       await schedulePaymentReminders(
         credito.id,
         credito.nombre,
         cuota,
         credito.fechaLimitePago,
+        credito.fechaCorte,
         hoy.getMonth() + 1,
         hoy.getFullYear(),
       );
     }
 
-    Alert.alert('¡Crédito creado!', `"${credito.nombre}" fue agregado exitosamente.`);
+    showToast({
+      title: '¡Crédito creado!',
+      message: `"${credito.nombre}" fue agregado exitosamente.`,
+      type: 'success',
+    });
     router.replace('/creditos');
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView 
+      contentContainerStyle={styles.container}
+      onScroll={onScroll}
+      scrollEventThrottle={16}
+    >
       <CreditoForm onSubmit={handleSubmit} onCancel={() => router.back()} />
     </ScrollView>
   );

@@ -32,46 +32,89 @@ export async function schedulePaymentReminders(
   creditoId: string,
   creditoNombre: string,
   cuotaMensual: number,
-  fechaLimitePagoDia: number,
+  fechaLimitePagoDia: number | null,
+  fechaCorteDia: number | null,
   mes: number,
   anio: number,
 ): Promise<void> {
   const daysOffsets = [3, 1, 0];
 
-  for (const diasAntes of daysOffsets) {
-    const fechaPago = new Date(anio, mes - 1, fechaLimitePagoDia);
-    const triggerDate = new Date(fechaPago);
-    triggerDate.setDate(triggerDate.getDate() - diasAntes);
-    triggerDate.setHours(9, 0, 0, 0);
+  // Notificaciones para la fecha límite de pago
+  if (fechaLimitePagoDia) {
+    for (const diasAntes of daysOffsets) {
+      const fechaPago = new Date(anio, mes - 1, fechaLimitePagoDia);
+      const triggerDate = new Date(fechaPago);
+      triggerDate.setDate(triggerDate.getDate() - diasAntes);
+      triggerDate.setHours(9, 0, 0, 0);
 
-    if (triggerDate <= new Date()) continue;
+      if (triggerDate <= new Date()) continue;
 
-    let title: string;
-    let body: string;
+      let title: string;
+      let body: string;
 
-    if (diasAntes === 0) {
-      title = '💰 Pago vence hoy';
-      body = `${creditoNombre}: ${cuotaMensual.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}`;
-    } else if (diasAntes === 1) {
-      title = '⏰ Pago vence mañana';
-      body = `${creditoNombre} — no olvides pagar`;
-    } else {
-      title = `⏰ Pago en ${diasAntes} días`;
-      body = `${creditoNombre} vence el ${fechaLimitePagoDia}`;
+      if (diasAntes === 0) {
+        title = '💰 Pago vence hoy';
+        body = `${creditoNombre}: ${cuotaMensual.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}`;
+      } else if (diasAntes === 1) {
+        title = '⏰ Pago vence mañana';
+        body = `${creditoNombre} — no olvides pagar`;
+      } else {
+        title = `⏰ Pago en ${diasAntes} días`;
+        body = `${creditoNombre} vence el ${fechaLimitePagoDia}`;
+      }
+
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title,
+          body,
+          data: { creditoId, mes, anio, tipo: 'pago' },
+          categoryIdentifier: 'pagos',
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: triggerDate,
+        },
+      });
     }
+  }
 
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-        data: { creditoId, mes, anio },
-        categoryIdentifier: 'pagos',
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: triggerDate,
-      },
-    });
+  // Notificaciones para la fecha de corte (si existe)
+  if (fechaCorteDia) {
+    for (const diasAntes of daysOffsets) {
+      const fechaCorte = new Date(anio, mes - 1, fechaCorteDia);
+      const triggerDate = new Date(fechaCorte);
+      triggerDate.setDate(triggerDate.getDate() - diasAntes);
+      triggerDate.setHours(9, 0, 0, 0);
+
+      if (triggerDate <= new Date()) continue;
+
+      let title: string;
+      let body: string;
+
+      if (diasAntes === 0) {
+        title = '✂️ Corte de tarjeta hoy';
+        body = `Hoy es la fecha de corte de ${creditoNombre}.`;
+      } else if (diasAntes === 1) {
+        title = '✂️ Corte de tarjeta mañana';
+        body = `Mañana es el corte de ${creditoNombre}.`;
+      } else {
+        title = `✂️ Corte en ${diasAntes} días`;
+        body = `El corte de ${creditoNombre} es el día ${fechaCorteDia}.`;
+      }
+
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title,
+          body,
+          data: { creditoId, mes, anio, tipo: 'corte' },
+          categoryIdentifier: 'pagos',
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: triggerDate,
+        },
+      });
+    }
   }
 }
 
@@ -108,6 +151,7 @@ export async function scheduleRemindersForAllCreditos(
     nombre: string;
     cuotaMensual: number;
     fechaLimitePago: number | null;
+    fechaCorte: number | null;
   }>,
 ): Promise<void> {
   const now = new Date();
@@ -115,7 +159,7 @@ export async function scheduleRemindersForAllCreditos(
   const anio = now.getFullYear();
 
   for (const c of creditos) {
-    if (!c.fechaLimitePago) continue;
-    await schedulePaymentReminders(c.id, c.nombre, c.cuotaMensual, c.fechaLimitePago, mes, anio);
+    if (!c.fechaLimitePago && !c.fechaCorte) continue;
+    await schedulePaymentReminders(c.id, c.nombre, c.cuotaMensual, c.fechaLimitePago, c.fechaCorte, mes, anio);
   }
 }

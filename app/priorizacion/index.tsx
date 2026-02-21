@@ -10,14 +10,19 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { CreditoConPagos, ResultadoEstrategias } from '@/types';
 import { getCreditos } from '@/lib/database';
 import { calcularEstrategias } from '@/lib/calculos/priorizacion';
-import { colors, spacing, fontSize, borderRadius } from '@/lib/theme';
+import { spacing, fontSize, borderRadius } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 import { formatCurrency } from '@/lib/utils';
+import { useScrollHideTabBar } from '@/lib/useScrollHideTabBar';
 
 export default function PriorizacionScreen() {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const [creditos, setCreditos] = useState<CreditoConPagos[]>([]);
   const [presupuesto, setPresupuesto] = useState('');
   const [resultado, setResultado] = useState<ResultadoEstrategias | null>(null);
   const [sumaMins, setSumaMins] = useState(0);
+  const { onScroll, onTouchStart, onTouchEnd, scrollEventThrottle } = useScrollHideTabBar();
 
   const cargar = useCallback(async () => {
     const cs = await getCreditos();
@@ -44,7 +49,14 @@ export default function PriorizacionScreen() {
       : null;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={styles.content}
+      onScroll={onScroll}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      scrollEventThrottle={scrollEventThrottle}
+    >
       {/* Info */}
       <Card style={styles.card}>
         <CardHeader title="Estrategias de pago de deuda" />
@@ -83,7 +95,7 @@ export default function PriorizacionScreen() {
               onChangeText={setPresupuesto}
             />
             <TouchableOpacity style={styles.calcBtn} onPress={calcular}>
-              <Ionicons name="calculator-outline" size={18} color={colors.primary.text} />
+              <Ionicons name="calculator-outline" size={20} color={colors.text.inverse} />
               <Text style={styles.calcBtnText}>Calcular</Text>
             </TouchableOpacity>
           </View>
@@ -152,47 +164,49 @@ export default function PriorizacionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface.background },
-  content: { padding: spacing.md, gap: spacing.sm },
+  content: { padding: spacing.lg, gap: spacing.md },
   card: { marginBottom: 0 },
-  infoText: { fontSize: fontSize.sm, color: colors.text.secondary, lineHeight: 20 },
-  bold: { fontWeight: '700' },
-  statsRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
-  statItem: { flex: 1, alignItems: 'center', padding: spacing.sm, backgroundColor: colors.surface.muted, borderRadius: borderRadius.md },
-  statNum: { fontSize: fontSize.lg, fontWeight: '700', color: colors.primary.default },
-  statLbl: { fontSize: fontSize.xs, color: colors.text.muted, textAlign: 'center' },
-  hint: { fontSize: fontSize.xs, color: colors.text.muted, marginBottom: spacing.sm },
-  inputRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
+  infoText: { fontSize: fontSize.sm, color: colors.text.secondary, lineHeight: 20, fontWeight: '500' },
+  bold: { fontWeight: '900', color: colors.text.primary },
+  statsRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.md },
+  statItem: { flex: 1, alignItems: 'center', padding: spacing.md, backgroundColor: colors.surface.muted, borderRadius: borderRadius.lg },
+  statNum: { fontSize: fontSize.xl, fontWeight: '900', color: colors.text.primary, letterSpacing: -0.5, fontFamily: 'SpaceGrotesk_700Bold' },
+  statLbl: { fontSize: 10, color: colors.text.secondary, textAlign: 'center', fontWeight: '800', textTransform: 'uppercase', marginTop: 4 },
+  hint: { fontSize: 11, color: colors.text.secondary, marginBottom: spacing.md, fontWeight: '600' },
+  inputRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
   input: {
-    flex: 1, borderWidth: 1, borderColor: colors.surface.border,
-    borderRadius: borderRadius.md, padding: spacing.sm,
-    fontSize: fontSize.md, color: colors.text.primary,
+    flex: 1, borderWidth: 2, borderColor: colors.surface.border,
+    borderRadius: borderRadius.lg, padding: spacing.md,
+    fontSize: fontSize.md, color: colors.text.primary, fontWeight: '700',
   },
   calcBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
-    backgroundColor: colors.primary.default,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: colors.surface.inverse,
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
+    borderRadius: borderRadius.full,
   },
-  calcBtnText: { color: colors.primary.text, fontWeight: '600', fontSize: fontSize.sm },
-  estrategiasRow: { flexDirection: 'row', gap: spacing.sm },
+  calcBtnText: { color: colors.text.inverse, fontWeight: '900', fontSize: fontSize.sm, textTransform: 'uppercase', letterSpacing: 0.5 },
+  estrategiasRow: { flexDirection: 'row', gap: spacing.md },
   estrategiaCol: { flex: 1 },
-  ordenRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm },
-  ordenTitle: { fontSize: fontSize.sm, fontWeight: '600', color: colors.text.primary, flex: 1 },
-  ordenItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xs },
+  ordenRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
+  ordenTitle: { fontSize: fontSize.sm, fontWeight: '800', color: colors.text.primary, flex: 1, textTransform: 'uppercase' },
+  ordenItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm },
   ordenNumBox: {
-    width: 24, height: 24, borderRadius: borderRadius.full,
-    backgroundColor: colors.primary.default, alignItems: 'center', justifyContent: 'center',
+    width: 28, height: 28, borderRadius: borderRadius.full,
+    backgroundColor: colors.surface.inverse, alignItems: 'center', justifyContent: 'center',
   },
-  ordenNum: { fontSize: fontSize.xs, color: colors.primary.text, fontWeight: '700' },
-  ordenNombre: { fontSize: fontSize.sm, color: colors.text.primary, flex: 1 },
-  empty: { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm },
-  emptyTitle: { fontSize: fontSize.lg, color: colors.text.secondary, fontWeight: '600' },
-  emptySubtitle: { fontSize: fontSize.sm, color: colors.text.muted, textAlign: 'center' },
+  ordenNum: { fontSize: fontSize.xs, color: colors.text.inverse, fontWeight: '900' },
+  ordenNombre: { fontSize: fontSize.md, color: colors.text.primary, flex: 1, fontWeight: '700' },
+  empty: { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.md },
+  emptyTitle: { fontSize: fontSize.lg, color: colors.text.secondary, fontWeight: '900', textTransform: 'uppercase' },
+  emptySubtitle: { fontSize: fontSize.sm, color: colors.text.secondary, textAlign: 'center', fontWeight: '500' },
   cta: {
-    backgroundColor: colors.surface.card, borderRadius: borderRadius.md,
-    padding: spacing.lg, alignItems: 'center',
+    backgroundColor: colors.surface.card, borderRadius: borderRadius.xl,
+    padding: spacing.xl, alignItems: 'center', borderWidth: 1, borderColor: colors.surface.border,
   },
-  ctaText: { fontSize: fontSize.sm, color: colors.text.secondary, textAlign: 'center', lineHeight: 20 },
+  ctaText: { fontSize: fontSize.md, color: colors.text.secondary, textAlign: 'center', lineHeight: 24, fontWeight: '500' },
 });
+}

@@ -1,20 +1,21 @@
 import { Stack } from 'expo-router';
-import { colors } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
+
 export default function CreditosLayout() {
+  const { colors } = useTheme();
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: colors.primary.default },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: '700' },
+        headerStyle: { backgroundColor: colors.surface.background },
+        headerTintColor: colors.text.primary,
+        headerTitleStyle: { fontWeight: '900' },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: colors.surface.background },
       }}
     >
       <Stack.Screen name="index" options={{ title: 'Mis Créditos' }} />
       <Stack.Screen name="nuevo" options={{ title: 'Nuevo Crédito' }} />
-      <Stack.Screen name="[id]/index" options={{ title: 'Detalle del Crédito' }} />
-      <Stack.Screen name="[id]/editar" options={{ title: 'Editar Crédito' }} />
-      <Stack.Screen name="[id]/pagos" options={{ title: 'Pagos del Crédito' }} />
-      <Stack.Screen name="[id]/documentos" options={{ title: 'Documentos' }} />
+      <Stack.Screen name="[id]" options={{ headerShown: false }} />
     </Stack>
   );
 }

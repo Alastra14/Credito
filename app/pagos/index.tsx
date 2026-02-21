@@ -9,31 +9,44 @@ import PagoTabla from '@/components/pagos/PagoTabla';
 import PagoForm from '@/components/pagos/PagoForm';
 import Modal from '@/components/ui/Modal';
 import { Credito, Pago, PagoMensualEstado } from '@/types';
-import { getCreditos, getPagosByCredito, createPago, deletePago } from '@/lib/database';
+import { getCreditos, getPagosByMes, createPago, deletePago, updateCreditoSaldo } from '@/lib/database';
 import { cancelNotificationsForPago } from '@/lib/notifications';
-import { colors, spacing, fontSize, borderRadius, shadow } from '@/lib/theme';
+import { spacing, fontSize, borderRadius, shadow } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 import { MESES } from '@/lib/constants';
 import { formatCurrency } from '@/lib/utils';
+import { useScrollHideTabBar } from '@/lib/useScrollHideTabBar';
 
 type CreditoConPagosLocal = Credito & { pagos: Pago[] };
 
 export default function PagosScreen() {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const now = new Date();
-  const [mes, setMes] = useState(now.getMonth() + 1);
-  const [anio, setAnio] = useState(now.getFullYear());
+  // Por defecto, mostrar el mes siguiente si ya pasamos el día 15, o el mes actual
+  const defaultMes = now.getDate() > 15 ? now.getMonth() + 2 : now.getMonth() + 1;
+  const defaultAnio = defaultMes > 12 ? now.getFullYear() + 1 : now.getFullYear();
+  const finalMes = defaultMes > 12 ? 1 : defaultMes;
+
+  const [mes, setMes] = useState(finalMes);
+  const [anio, setAnio] = useState(defaultAnio);
   const [creditos, setCreditos] = useState<CreditoConPagosLocal[]>([]);
   const [selectedCredito, setSelectedCredito] = useState<CreditoConPagosLocal | null>(null);
   const [selectedMesIndex, setSelectedMesIndex] = useState<number | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const { onScroll, onTouchStart, onTouchEnd, scrollEventThrottle } = useScrollHideTabBar();
 
   const cargar = useCallback(async () => {
     const cs = await getCreditos();
     const activos = cs.filter(c => c.estado === 'activo');
-    const withPagos: CreditoConPagosLocal[] = await Promise.all(
-      activos.map(async c => ({ ...c, pagos: await getPagosByCredito(c.id) }))
-    );
+    const pagosDelMes = await getPagosByMes(mes, anio);
+    
+    const withPagos: CreditoConPagosLocal[] = activos.map(c => ({
+      ...c,
+      pagos: pagosDelMes.filter(p => p.creditoId === c.id)
+    }));
     setCreditos(withPagos);
-  }, []);
+  }, [mes, anio]);
 
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
@@ -66,9 +79,12 @@ export default function PagosScreen() {
     setModalVisible(true);
   }
 
-  async function handlePagar(data: Omit<Pago, 'id' | 'creditoId' | 'creadoEn'>) {
+  async function handlePagar(data: Omit<Pago, 'id' | 'creditoId' | 'creadoEn'>, nuevoSaldo?: number) {
     if (!selectedCredito) return;
     await createPago({ ...data, creditoId: selectedCredito.id });
+    if (nuevoSaldo !== undefined) {
+      await updateCreditoSaldo(selectedCredito.id, nuevoSaldo);
+    }
     setModalVisible(false);
     cargar();
   }
@@ -89,11 +105,11 @@ export default function PagosScreen() {
       {/* Selector de mes */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.navBtn}>
-          <Ionicons name="chevron-back-outline" size={22} color={colors.primary.default} />
+          <Ionicons name="chevron-back-outline" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.mesLabel}>{MESES[mes - 1]} {anio}</Text>
         <TouchableOpacity onPress={() => changeMonth(1)} style={styles.navBtn}>
-          <Ionicons name="chevron-forward-outline" size={22} color={colors.primary.default} />
+          <Ionicons name="chevron-forward-outline" size={24} color={colors.text.primary} />
         </TouchableOpacity>
       </View>
 
@@ -113,7 +129,13 @@ export default function PagosScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.lista}>
+      <ScrollView 
+        contentContainerStyle={styles.lista}
+        onScroll={onScroll}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        scrollEventThrottle={scrollEventThrottle}
+      >
         {creditos.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="wallet-outline" size={48} color={colors.text.disabled} />
@@ -149,14 +171,16 @@ export default function PagosScreen() {
       <Modal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        title={`Registrar pago — ${MESES[mes - 1]} ${anio}`}
+        noPadding
       >
         {selectedCredito && selectedMesIndex !== null && (
           <PagoForm
             creditoId={selectedCredito.id}
+            creditoTipo={selectedCredito.tipo}
             mesIndex={selectedMesIndex}
             anio={anio}
             montoSugerido={selectedCredito.cuotaMensual ?? selectedCredito.pagoMinimo ?? undefined}
+            saldoActual={selectedCredito.saldoActual}
             pagoExistente={getPagoEstado(selectedCredito).pago ?? undefined}
             onSubmit={handlePagar}
             onCancel={() => setModalVisible(false)}
@@ -167,44 +191,51 @@ export default function PagosScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface.background },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: colors.surface.card,
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
-    borderBottomWidth: 1, borderBottomColor: colors.surface.border,
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
+    borderBottomWidth: 2, borderBottomColor: colors.surface.border,
   },
   navBtn: { padding: spacing.sm },
-  mesLabel: { fontSize: fontSize.lg, fontWeight: '700', color: colors.text.primary },
+  mesLabel: { fontSize: fontSize.xl, fontWeight: '900', color: colors.text.primary, textTransform: 'uppercase', letterSpacing: -0.5, fontFamily: 'SpaceGrotesk_700Bold',},
   resumenRow: {
-    flexDirection: 'row', gap: spacing.sm,
-    padding: spacing.md, backgroundColor: colors.surface.card,
-    borderBottomWidth: 1, borderBottomColor: colors.surface.border,
+    flexDirection: 'row', gap: spacing.md,
+    padding: spacing.lg, backgroundColor: colors.surface.card,
+    borderBottomWidth: 2, borderBottomColor: colors.surface.border,
   },
   resumenCard: {
-    flex: 1, alignItems: 'center', padding: spacing.sm,
+    flex: 1, alignItems: 'center', padding: spacing.md,
     backgroundColor: colors.surface.background,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.xl,
+    ...shadow.sm,
   },
-  resumenNum: { fontSize: fontSize.xl, fontWeight: '700', color: colors.primary.default },
-  resumenLbl: { fontSize: fontSize.xs, color: colors.text.muted },
-  lista: { padding: spacing.md, gap: spacing.sm },
+  resumenNum: { fontSize: fontSize.xxl, fontWeight: '900', color: colors.text.primary, letterSpacing: -1, fontFamily: 'SpaceGrotesk_700Bold',},
+  resumenLbl: { fontSize: 10, color: colors.text.secondary, fontWeight: '900', textTransform: 'uppercase' },
+  lista: { padding: spacing.lg, gap: spacing.md },
   creditoBlock: {
-    backgroundColor: colors.surface.card, borderRadius: borderRadius.md,
-    overflow: 'hidden', ...shadow.sm,
+    backgroundColor: colors.surface.card,
+    borderRadius: borderRadius.xl,
+    ...shadow.md,
+    marginBottom: spacing.md,
+    overflow: 'hidden',
   },
   creditoHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.surface.border,
+    padding: spacing.lg, borderBottomWidth: 2, borderBottomColor: colors.text.primary,
+    backgroundColor: colors.primary.default,
   },
-  creditoNombre: { fontSize: fontSize.md, fontWeight: '600', color: colors.text.primary },
-  creditoMonto: { fontSize: fontSize.sm, color: colors.primary.default, fontWeight: '600' },
-  empty: { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm },
-  emptyTitle: { fontSize: fontSize.lg, color: colors.text.muted },
+  creditoNombre: { fontSize: fontSize.lg, fontWeight: '900', color: colors.text.primary, textTransform: 'uppercase', letterSpacing: -0.5 },
+  creditoMonto: { fontSize: fontSize.md, color: colors.text.primary, fontWeight: '900', fontFamily: 'SpaceGrotesk_700Bold',},
+  empty: { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.md },
+  emptyTitle: { fontSize: fontSize.lg, color: colors.text.secondary, fontWeight: '900', textTransform: 'uppercase' },
   emptyBtn: {
-    backgroundColor: colors.primary.default, paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm, borderRadius: borderRadius.md,
+    backgroundColor: colors.text.primary, paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
   },
-  emptyBtnText: { color: colors.primary.text, fontWeight: '600' },
+  emptyBtnText: { color: colors.surface.background, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 },
 });
+}

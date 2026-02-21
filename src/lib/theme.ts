@@ -1,44 +1,91 @@
-export const colors = {
+export const lightColors = {
   primary: {
-    default: '#6366f1',
-    light: '#e0e7ff',
-    dark: '#4338ca',
-    text: '#ffffff',
+    default: '#CCFF00', // Radioactive green
+    light: '#E6FF80',
+    dark: '#99CC00',
+    text: '#000000',
   },
   surface: {
-    background: '#f8fafc',
-    card: '#ffffff',
-    muted: '#f1f5f9',
-    border: '#e2e8f0',
+    background: '#F5F5F5',
+    card: '#FFFFFF',
+    muted: '#E0E0E0',
+    border: '#E5E5E5',
+    inverse: '#121212', // For black cards
   },
   text: {
-    primary: '#0f172a',
-    secondary: '#475569',
-    muted: '#94a3b8',
-    disabled: '#cbd5e1',
-    inverse: '#ffffff',
+    primary: '#000000',
+    secondary: '#666666',
+    muted: '#999999',
+    disabled: '#CCCCCC',
+    inverse: '#FFFFFF',
   },
   success: {
-    default: '#22c55e',
-    light: '#dcfce7',
-    text: '#15803d',
+    default: '#CCFF00',
+    light: '#E6FF80',
+    text: '#000000',
   },
   warning: {
-    default: '#f59e0b',
-    light: '#fef3c7',
-    text: '#92400e',
+    default: '#FF00FF', // Neon pink
+    light: '#FF66FF',
+    text: '#FFFFFF',
   },
   destructive: {
-    default: '#ef4444',
-    light: '#fee2e2',
-    text: '#b91c1c',
+    default: '#FF3333',
+    light: '#FF9999',
+    text: '#FFFFFF',
   },
   info: {
-    default: '#3b82f6',
-    light: '#dbeafe',
-    text: '#1d4ed8',
+    default: '#00FFFF', // Cyan
+    light: '#99FFFF',
+    text: '#000000',
   },
 };
+
+export const darkColors = {
+  primary: {
+    default: '#CCFF00',
+    light: '#E6FF80',
+    dark: '#99CC00',
+    text: '#000000',
+  },
+  surface: {
+    background: '#121212',
+    card: '#1E1E1E',
+    muted: '#2C2C2C',
+    border: '#333333',
+    inverse: '#2A2A2A',
+  },
+  text: {
+    primary: '#FFFFFF',
+    secondary: '#A0A0A0',
+    muted: '#666666',
+    disabled: '#444444',
+    inverse: '#CCFF00',
+  },
+  success: {
+    default: '#CCFF00',
+    light: '#E6FF80',
+    text: '#000000',
+  },
+  warning: {
+    default: '#FF00FF',
+    light: '#FF66FF',
+    text: '#FFFFFF',
+  },
+  destructive: {
+    default: '#FF4444',
+    light: '#FF9999',
+    text: '#FFFFFF',
+  },
+  info: {
+    default: '#00FFFF',
+    light: '#99FFFF',
+    text: '#000000',
+  },
+};
+
+// For backward compatibility during refactor
+export const colors = lightColors;
 
 export const spacing = {
   xs: 4,
@@ -76,16 +123,41 @@ export const fontWeight = {
 export const shadow = {
   sm: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowRadius: 4,
     elevation: 2,
   },
   md: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  lg: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 10,
+  },
+};
+
+export const typography = {
+  titleUrban: {
+    fontFamily: 'sans-serif-condensed',
+    textTransform: 'uppercase' as const,
+    letterSpacing: -0.5,
+    fontWeight: '900' as const,
+  },
+  numbers: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+  },
+  numbersMedium: {
+    fontFamily: 'SpaceGrotesk_500Medium',
+  },
+  numbersRegular: {
+    fontFamily: 'SpaceGrotesk_400Regular',
   },
 };

@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { ProgressChart } from 'react-native-chart-kit';
 import { CreditoConPagos } from '@/types';
-import { colors, fontSize, spacing, borderRadius, shadow } from '@/lib/theme';
+import { fontSize, spacing, borderRadius, shadow } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 
 const SCREEN_W = Dimensions.get('window').width;
 
@@ -11,6 +12,8 @@ interface Props {
 }
 
 export default function ProgresoChart({ creditos }: Props) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const activos = creditos
     .filter(c => c.plazoMeses && c.plazoMeses > 0)
     .slice(0, 6); // máximo 6 barras
@@ -56,21 +59,24 @@ export default function ProgresoChart({ creditos }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: {
     backgroundColor: colors.surface.card,
-    borderRadius: borderRadius.lg,
     padding: spacing.md,
+    borderRadius: borderRadius.xl,
     ...shadow.md,
     marginBottom: spacing.sm,
   },
   titulo: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontSize: fontSize.md,
+    fontWeight: '900',
     color: colors.text.primary,
     marginBottom: spacing.sm,
+    textTransform: 'uppercase',
   },
   chart: {
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
   },
 });
+}

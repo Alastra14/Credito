@@ -4,7 +4,8 @@ import {
   StyleSheet, ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, fontSize, borderRadius, spacing, shadow } from '@/lib/theme';
+import { fontSize, borderRadius, spacing, shadow } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 
 interface SelectOption {
   value: string;
@@ -25,6 +26,8 @@ export default function Select({
   label, value, onChange, options, placeholder = 'Seleccionar...',
   error, containerStyle,
 }: SelectProps) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const [open, setOpen] = useState(false);
   const selected = options.find(o => o.value === value);
 
@@ -73,40 +76,44 @@ export default function Select({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { marginBottom: spacing.md },
+function getStyles(colors: any) {
+  return StyleSheet.create({
+  container: { marginBottom: spacing.lg },
   label: {
-    fontSize: fontSize.sm, fontWeight: '500',
-    color: colors.text.primary, marginBottom: spacing.xs,
+    fontSize: fontSize.sm, fontWeight: '800',
+    color: colors.text.primary, marginBottom: spacing.sm,
+    textTransform: 'uppercase', letterSpacing: 0.5,
   },
   trigger: {
-    height: 44,
-    borderWidth: 1, borderColor: colors.surface.border,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
+    height: 56,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.lg,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: colors.surface.card,
+    ...shadow.sm,
   },
   triggerError: { borderColor: colors.destructive.default },
-  value: { fontSize: fontSize.md, color: colors.text.primary },
-  placeholder: { fontSize: fontSize.md, color: colors.text.muted },
-  error: { fontSize: fontSize.xs, color: colors.destructive.default, marginTop: 4 },
+  value: { fontSize: fontSize.md, fontWeight: '600', color: colors.text.primary },
+  placeholder: { fontSize: fontSize.md, fontWeight: '600', color: colors.text.muted },
+  error: { fontSize: fontSize.xs, fontWeight: '700', color: colors.destructive.default, marginTop: 6, textTransform: 'uppercase' },
   overlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.4)',
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center', padding: spacing.xl,
   },
   dropdown: {
     backgroundColor: colors.surface.card,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     maxHeight: 320,
+    borderWidth: 1, borderColor: colors.surface.border,
     ...shadow.md,
   },
   option: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: spacing.md, paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.lg,
     borderBottomWidth: 1, borderBottomColor: colors.surface.border,
   },
-  optionSelected: { backgroundColor: colors.primary.light },
-  optionText: { fontSize: fontSize.md, color: colors.text.primary },
-  optionTextSelected: { color: colors.primary.default, fontWeight: '600' },
+  optionSelected: { backgroundColor: colors.surface.muted },
+  optionText: { fontSize: fontSize.md, fontWeight: '600', color: colors.text.primary },
+  optionTextSelected: { color: colors.text.primary, fontWeight: '900' },
 });
+}

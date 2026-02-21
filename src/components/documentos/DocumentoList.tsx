@@ -1,9 +1,13 @@
-import React from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Documento } from '@/types';
-import { colors, spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
+import { spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 import { formatDate, formatFileSize } from '@/lib/utils';
+import { useToast } from '@/components/ui/Toast';
+import AppModal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
 
 interface Props {
   documentos: Documento[];
@@ -19,6 +23,11 @@ function mimeIcon(tipo: string): string {
 }
 
 export default function DocumentoList({ documentos, onEliminar }: Props) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+  const { showToast } = useToast();
+  const [docToDelete, setDocToDelete] = useState<Documento | null>(null);
+
   if (documentos.length === 0) {
     return (
       <View style={styles.empty}>
@@ -30,87 +39,136 @@ export default function DocumentoList({ documentos, onEliminar }: Props) {
 
   function handleOpen(doc: Documento) {
     Linking.openURL(doc.uri).catch(() =>
-      Alert.alert('Error', 'No se pudo abrir el archivo')
+      showToast({
+        title: 'Error',
+        message: 'No se pudo abrir el archivo',
+        type: 'error'
+      })
     );
   }
 
   function handleDelete(doc: Documento) {
-    Alert.alert(
-      'Eliminar documento',
-      `¿Deseas eliminar "${doc.nombre}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Eliminar', style: 'destructive', onPress: () => onEliminar(doc) },
-      ]
-    );
+    setDocToDelete(doc);
+  }
+
+  function confirmDelete() {
+    if (docToDelete) {
+      onEliminar(docToDelete);
+      setDocToDelete(null);
+    }
   }
 
   return (
-    <FlatList
-      data={documentos}
-      keyExtractor={item => item.id}
-      scrollEnabled={false}
-      contentContainerStyle={styles.lista}
-      renderItem={({ item }) => (
-        <TouchableOpacity style={styles.fila} onPress={() => handleOpen(item)} activeOpacity={0.75}>
-          <View style={styles.iconBox}>
-            <Ionicons name={mimeIcon(item.tipo) as any} size={22} color={colors.primary.default} />
-          </View>
-          <View style={styles.info}>
-            <Text style={styles.nombre} numberOfLines={1}>{item.nombre}</Text>
-            <Text style={styles.meta}>
-              {formatFileSize(item.tamano)} · {formatDate(item.creadoEn)}
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => handleDelete(item)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="trash-outline" size={18} color={colors.destructive.default} />
+    <>
+      <FlatList
+        data={documentos}
+        keyExtractor={item => item.id}
+        scrollEnabled={false}
+        contentContainerStyle={styles.lista}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.fila} onPress={() => handleOpen(item)} activeOpacity={0.75}>
+            <View style={styles.iconBox}>
+              <Ionicons name={mimeIcon(item.tipo) as any} size={22} color={colors.primary.default} />
+            </View>
+            <View style={styles.info}>
+              <Text style={styles.nombre} numberOfLines={1}>{item.nombre}</Text>
+              <Text style={styles.meta}>
+                {formatFileSize(item.tamano)} · {formatDate(item.creadoEn)}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => handleDelete(item)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="trash-outline" size={18} color={colors.destructive.default} />
+            </TouchableOpacity>
           </TouchableOpacity>
-        </TouchableOpacity>
-      )}
-    />
+        )}
+      />
+
+      <AppModal
+        visible={!!docToDelete}
+        onClose={() => setDocToDelete(null)}
+        title="Eliminar documento"
+      >
+        <Text style={styles.modalText}>
+          ¿Deseas eliminar "{docToDelete?.nombre}"?
+        </Text>
+        <View style={styles.modalActions}>
+          <Button 
+            variant="outline" 
+            onPress={() => setDocToDelete(null)}
+            style={styles.modalBtn}
+          >
+            Cancelar
+          </Button>
+          <Button 
+            onPress={confirmDelete}
+            style={[styles.modalBtn, { backgroundColor: colors.destructive.default }]}
+          >
+            Eliminar
+          </Button>
+        </View>
+      </AppModal>
+    </>
   );
 }
 
-const styles = StyleSheet.create({
-  lista: { gap: spacing.xs },
+function getStyles(colors: any) {
+  return StyleSheet.create({
+  lista: { gap: spacing.md },
   fila: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    gap: spacing.sm,
+    padding: spacing.md,
+    gap: spacing.md,
+    borderRadius: borderRadius.lg,
     ...shadow.sm,
   },
   iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primary.light,
+    width: 48,
+    height: 48,
+    backgroundColor: colors.surface.background,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 24,
   },
   info: { flex: 1 },
   nombre: {
-    fontSize: fontSize.sm,
-    fontWeight: '500',
+    fontSize: fontSize.md,
+    fontWeight: '900',
     color: colors.text.primary,
+    textTransform: 'uppercase',
   },
   meta: {
     fontSize: fontSize.xs,
-    color: colors.text.muted,
-    marginTop: 2,
+    color: colors.text.secondary,
+    marginTop: 4,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   empty: {
     alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.lg,
+    gap: spacing.sm,
+    paddingVertical: spacing.xl,
   },
   emptyText: {
     fontSize: fontSize.sm,
-    color: colors.text.muted,
+    color: colors.text.secondary,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+  },  modalText: {
+    fontSize: fontSize.md,
+    color: colors.text.secondary,
+    marginBottom: spacing.xl,
+    textAlign: 'center',
   },
-});
+  modalActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  modalBtn: {
+    flex: 1,
+  },});
+}

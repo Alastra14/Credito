@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 import { CreditoConPagos } from '@/types';
-import { colors, fontSize, spacing, borderRadius, shadow } from '@/lib/theme';
+import { fontSize, spacing, borderRadius, shadow } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 import { formatCurrency } from '@/lib/utils';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -17,6 +18,8 @@ interface Props {
 }
 
 export default function DeudaPieChart({ creditos }: Props) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   if (creditos.length === 0) return null;
 
   // Agrupar por tipo
@@ -64,25 +67,30 @@ export default function DeudaPieChart({ creditos }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: {
     backgroundColor: colors.surface.card,
-    borderRadius: borderRadius.lg,
     padding: spacing.md,
+    borderRadius: borderRadius.xl,
     ...shadow.md,
     marginBottom: spacing.sm,
   },
   titulo: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontSize: fontSize.md,
+    fontWeight: '900',
     color: colors.text.primary,
+    textTransform: 'uppercase',
   },
   total: {
-    fontSize: fontSize.xs,
-    color: colors.text.muted,
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
     marginBottom: spacing.sm,
-  },
+    fontWeight: '900',
+    textTransform: 'uppercase',
+   fontFamily: 'SpaceGrotesk_700Bold',},
   chart: {
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
   },
 });
+}

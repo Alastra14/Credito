@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { colors, spacing, borderRadius, shadow, fontSize, fontWeight } from '@/lib/theme';
+import { spacing, borderRadius, shadow, fontSize, fontWeight } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 
 interface CardProps {
   children: React.ReactNode;
@@ -19,10 +20,14 @@ interface CardContentProps {
 }
 
 export function Card({ children, style }: CardProps) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
 export function CardHeader({ title, subtitle, right }: CardHeaderProps) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   return (
     <View style={styles.header}>
       <View style={styles.headerText}>
@@ -35,13 +40,18 @@ export function CardHeader({ title, subtitle, right }: CardHeaderProps) {
 }
 
 export function CardContent({ children, style }: CardContentProps) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   return <View style={[styles.content, style]}>{children}</View>;
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   card: {
     backgroundColor: colors.surface.card,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.surface.border,
     ...shadow.md,
     overflow: 'hidden',
   },
@@ -49,8 +59,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
   },
   headerText: {
@@ -58,16 +68,20 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: '900',
     color: colors.text.primary,
+    textTransform: 'uppercase',
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
-    marginTop: 2,
+    marginTop: 4,
+    fontWeight: '600',
   },
   content: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
 });
+}

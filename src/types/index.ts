@@ -21,6 +21,7 @@ export interface Credito {
   tipo: TipoCredito;
   saldoActual: number;
   saldoOriginal: number;
+  limiteCredito: number | null;
   tasaAnual: number;
   fechaCorte: number | null;
   fechaLimitePago: number | null;
@@ -69,6 +70,7 @@ export interface CreditoFormData {
   tipo: TipoCredito;
   saldoActual: number;
   saldoOriginal: number;
+  limiteCredito?: number;
   tasaAnual: number;
   estado: EstadoCredito;
   plazoMeses?: number;
@@ -78,6 +80,12 @@ export interface CreditoFormData {
   fechaLimitePago?: number;
   institucion?: string;
   notas?: string;
+  documentosPendientes?: {
+    nombre: string;
+    tipo: string;
+    uri: string;
+    tamano: number;
+  }[];
 }
 
 // ─── Cálculos ─────────────────────────────────────────────────────────────────

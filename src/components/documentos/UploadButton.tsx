@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Alert } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '@/components/ui/Button';
 import { MAX_FILE_SIZE_BYTES } from '@/lib/constants';
 import { formatFileSize, generateId } from '@/lib/utils';
+import { useToast } from '@/components/ui/Toast';
 
 interface Props {
   creditoId: string;
@@ -14,47 +14,55 @@ interface Props {
 
 export default function UploadButton({ creditoId, onUploaded }: Props) {
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
 
   async function handlePick() {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: '*/*',
         copyToCacheDirectory: true,
+        multiple: true,
       });
 
-      if (result.canceled) return;
-
-      const asset = result.assets[0];
-      const tamano = asset.size ?? 0;
-
-      if (tamano > MAX_FILE_SIZE_BYTES) {
-        Alert.alert(
-          'Archivo muy grande',
-          `El archivo supera el límite de ${formatFileSize(MAX_FILE_SIZE_BYTES)}. Tamaño: ${formatFileSize(tamano)}`
-        );
-        return;
-      }
+      if (result.canceled || result.assets.length === 0) return;
 
       setLoading(true);
 
-      // Copiar al directorio de la app (persiste entre reinicios)
-      const dir = FileSystem.documentDirectory + `creditos/${creditoId}/`;
-      await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+      for (const asset of result.assets) {
+        const tamano = asset.size ?? 0;
 
-      const ext = asset.name.split('.').pop() ?? 'bin';
-      const destName = `${generateId()}.${ext}`;
-      const destUri = dir + destName;
+        if (tamano > MAX_FILE_SIZE_BYTES) {
+          showToast({
+            title: 'Archivo muy grande',
+            message: `El archivo ${asset.name} supera el límite de ${formatFileSize(MAX_FILE_SIZE_BYTES)}.`,
+            type: 'warning'
+          });
+          continue;
+        }
 
-      await FileSystem.copyAsync({ from: asset.uri, to: destUri });
+        // Copiar al directorio de la app (persiste entre reinicios)
+        const dir = FileSystem.documentDirectory + `creditos/${creditoId}/`;
+        await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
 
-      await onUploaded({
-        nombre: asset.name,
-        uri: destUri,
-        tipo: asset.mimeType ?? 'application/octet-stream',
-        tamano,
-      });
+        const ext = asset.name.split('.').pop() ?? 'bin';
+        const destName = `${generateId()}.${ext}`;
+        const destUri = dir + destName;
+
+        await FileSystem.copyAsync({ from: asset.uri, to: destUri });
+
+        await onUploaded({
+          nombre: asset.name,
+          uri: destUri,
+          tipo: asset.mimeType ?? 'application/octet-stream',
+          tamano,
+        });
+      }
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'No se pudo subir el documento');
+      showToast({
+        title: 'Error',
+        message: err.message || 'No se pudo subir el documento',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }

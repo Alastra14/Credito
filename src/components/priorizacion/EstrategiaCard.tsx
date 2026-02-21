@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { EstrategiaDetalle } from '@/types';
-import { colors, spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
+import { spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 import { formatCurrency } from '@/lib/utils';
 
 interface Props {
@@ -11,6 +12,8 @@ interface Props {
 }
 
 export default function EstrategiaCard({ estrategia, esRecomendada }: Props) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const esAvalanche = estrategia.nombre === 'Avalancha';
 
   return (
@@ -72,15 +75,14 @@ export default function EstrategiaCard({ estrategia, esRecomendada }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: {
     backgroundColor: colors.surface.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.xl,
     ...shadow.md,
-    borderWidth: 1,
-    borderColor: colors.surface.border,
   },
   containerDestacado: {
     borderColor: colors.primary.default,
@@ -91,97 +93,109 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     alignSelf: 'flex-start',
-    backgroundColor: colors.primary.default,
+    backgroundColor: colors.text.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 4,
     borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   badgeLabel: {
     fontSize: 10,
-    color: '#fff',
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    color: colors.surface.background,
+    fontWeight: '900',
+    letterSpacing: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
+    gap: spacing.md,
+    marginBottom: spacing.lg,
   },
   iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.full,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
   nombre: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
+    fontSize: fontSize.xl,
+    fontWeight: '900',
     color: colors.text.primary,
+    textTransform: 'uppercase',
+    letterSpacing: -0.5,
   },
   descripcion: {
-    fontSize: fontSize.xs,
-    color: colors.text.muted,
+    fontSize: 11,
+    color: colors.text.secondary,
     maxWidth: 220,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   stats: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface.muted,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    marginBottom: spacing.md,
+    backgroundColor: colors.surface.background,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    borderRadius: borderRadius.lg,
   },
   stat: {
     flex: 1,
     alignItems: 'center',
   },
   statValor: {
-    fontSize: fontSize.sm,
-    fontWeight: '700',
+    fontSize: fontSize.md,
+    fontWeight: '900',
     color: colors.text.primary,
-  },
+    letterSpacing: -0.5,
+   fontFamily: 'SpaceGrotesk_700Bold',},
   statLabel: {
     fontSize: 10,
-    color: colors.text.muted,
+    color: colors.text.secondary,
     textAlign: 'center',
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    marginTop: 4,
   },
   separador: {
-    width: 1,
+    width: 2,
     height: 32,
     backgroundColor: colors.surface.border,
   },
   orden: {
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   ordenTitulo: {
-    fontSize: fontSize.xs,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '900',
     color: colors.text.secondary,
-    marginBottom: 2,
+    marginBottom: 4,
+    textTransform: 'uppercase',
   },
   ordenItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   numBadge: {
-    width: 20,
-    height: 20,
-    borderRadius: borderRadius.full,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   numBadgeLabel: {
     fontSize: 11,
-    color: '#fff',
-    fontWeight: '700',
+    color: colors.surface.background,
+    fontWeight: '900',
   },
   ordenNombre: {
     fontSize: fontSize.sm,
     color: colors.text.primary,
     flex: 1,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
 });
+}

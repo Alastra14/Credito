@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { BarChart } from 'react-native-chart-kit';
 import { CreditoConPagos } from '@/types';
-import { colors, fontSize, spacing, borderRadius, shadow } from '@/lib/theme';
+import { fontSize, spacing, borderRadius, shadow } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 
 const SCREEN_W = Dimensions.get('window').width;
 
@@ -11,6 +12,8 @@ interface Props {
 }
 
 export default function TasasChart({ creditos }: Props) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   if (creditos.length === 0) return null;
 
   const sorted = [...creditos].sort((a, b) => b.tasaAnual - a.tasaAnual).slice(0, 8);
@@ -51,7 +54,8 @@ export default function TasasChart({ creditos }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: {
     backgroundColor: colors.surface.card,
     borderRadius: borderRadius.lg,
@@ -69,3 +73,4 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
   },
 });
+}

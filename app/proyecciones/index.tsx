@@ -6,22 +6,27 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import ProyeccionChart from '@/components/charts/ProyeccionChart';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
-import { CreditoConPagos, ProyeccionCredito } from '@/types';
+import { Credito, ProyeccionCredito } from '@/types';
 import { getCreditos } from '@/lib/database';
 import { calcularProyeccion } from '@/lib/calculos/proyeccion';
-import { colors, spacing, fontSize, borderRadius, shadow } from '@/lib/theme';
+import { spacing, fontSize, borderRadius, shadow } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 import { formatCurrency, tipoLabel } from '@/lib/utils';
+import { useScrollHideTabBar } from '@/lib/useScrollHideTabBar';
 
 export default function ProyeccionesScreen() {
-  const [todosCreditos, setTodosCreditos] = useState<CreditoConPagos[]>([]);
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+  const [todosCreditos, setTodosCreditos] = useState<Credito[]>([]);
   const [seleccionados, setSeleccionados] = useState<Set<string>>(new Set());
   const [pagoExtra, setPagoExtra] = useState('');
   const [proyecciones, setProyecciones] = useState<ProyeccionCredito[]>([]);
   const [expandido, setExpandido] = useState<string | null>(null);
+  const { onScroll, onTouchStart, onTouchEnd, scrollEventThrottle } = useScrollHideTabBar();
 
   const cargar = useCallback(async () => {
     const cs = await getCreditos();
-    const activos = cs.filter(c => c.estado === 'activo') as CreditoConPagos[];
+    const activos = cs.filter(c => c.estado === 'activo');
     setTodosCreditos(activos);
     if (activos.length > 0 && seleccionados.size === 0) {
       const ids = new Set(activos.slice(0, 3).map(c => c.id));
@@ -55,7 +60,14 @@ export default function ProyeccionesScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={styles.content}
+      onScroll={onScroll}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      scrollEventThrottle={scrollEventThrottle}
+    >
       {/* Selector de créditos */}
       <Card style={styles.card}>
         <CardHeader title="Seleccionar créditos (máx. 5)" />
@@ -150,37 +162,42 @@ export default function ProyeccionesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface.background },
-  content: { padding: spacing.md, gap: spacing.sm },
+  content: { padding: spacing.lg, gap: spacing.md },
   card: { marginBottom: 0 },
   checkRow: {
     flexDirection: 'row', alignItems: 'center',
-    paddingVertical: spacing.sm, paddingHorizontal: spacing.xs,
-    borderRadius: borderRadius.md,
+    paddingVertical: spacing.md, paddingHorizontal: spacing.sm,
+    borderBottomWidth: 2, borderBottomColor: colors.surface.border,
   },
-  checkRowSelected: { backgroundColor: colors.primary.light },
-  checkNombre: { fontSize: fontSize.sm, fontWeight: '600', color: colors.text.primary },
-  checkSub: { fontSize: fontSize.xs, color: colors.text.muted },
-  emptyTxt: { color: colors.text.muted, textAlign: 'center', paddingVertical: spacing.md },
+  checkRowSelected: { backgroundColor: colors.primary.default },
+  checkNombre: { fontSize: fontSize.md, fontWeight: '900', color: colors.text.primary, textTransform: 'uppercase' },
+  checkSub: { fontSize: fontSize.sm, color: colors.text.secondary, fontWeight: '600', textTransform: 'uppercase' },
+  emptyTxt: { color: colors.text.secondary, textAlign: 'center', paddingVertical: spacing.md, fontWeight: '800', textTransform: 'uppercase' },
   input: {
-    borderWidth: 1, borderColor: colors.surface.border,
-    borderRadius: borderRadius.md, padding: spacing.sm,
-    fontSize: fontSize.md, color: colors.text.primary,
+    borderWidth: 2, borderColor: colors.text.primary,
+    backgroundColor: colors.surface.background,
+    padding: spacing.md,
+    fontSize: fontSize.lg, color: colors.text.primary,
+    fontWeight: '900',
   },
   acordeonHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     padding: spacing.md,
+    borderBottomWidth: 2, borderBottomColor: colors.surface.border,
   },
-  acordeonTitle: { fontSize: fontSize.md, fontWeight: '600', color: colors.text.primary },
+  acordeonTitle: { fontSize: fontSize.lg, fontWeight: '900', color: colors.text.primary, textTransform: 'uppercase' },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: colors.surface.muted,
-    paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
-    borderTopWidth: 1, borderTopColor: colors.surface.border,
+    paddingHorizontal: spacing.sm, paddingVertical: spacing.sm,
+    borderBottomWidth: 2, borderBottomColor: colors.text.primary,
   },
-  th: { fontSize: fontSize.xs, fontWeight: '700', color: colors.text.secondary, textAlign: 'right' },
-  tableRow: { flexDirection: 'row', paddingHorizontal: spacing.sm, paddingVertical: 4 },
+  th: { fontSize: 10, fontWeight: '900', color: colors.text.secondary, textAlign: 'right', textTransform: 'uppercase' },
+  tableRow: { flexDirection: 'row', paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.surface.border },
   tableRowAlt: { backgroundColor: colors.surface.muted },
-  td: { fontSize: fontSize.xs, color: colors.text.primary, textAlign: 'right' },
+  td: { fontSize: fontSize.sm, color: colors.text.primary, textAlign: 'right', fontWeight: '600', fontFamily: 'SpaceGrotesk_700Bold' },
 });
+}

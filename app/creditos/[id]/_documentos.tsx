@@ -1,17 +1,21 @@
-import React, { useCallback, useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import React, { useCallback, useState, useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system';
 import DocumentoList from '@/components/documentos/DocumentoList';
 import UploadButton from '@/components/documentos/UploadButton';
 import { Documento } from '@/types';
 import { getDocumentosByCredito, createDocumento, deleteDocumento } from '@/lib/database';
-import { colors, spacing } from '@/lib/theme';
+import { spacing } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
+import { useToast } from '@/components/ui/Toast';
 
 export default function DocumentosCreditoScreen() {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const { id } = useLocalSearchParams<{ id: string }>();
   const [documentos, setDocumentos] = useState<Documento[]>([]);
+  const { showToast } = useToast();
 
   const cargar = useCallback(async () => {
     if (!id) return;
@@ -19,27 +23,28 @@ export default function DocumentosCreditoScreen() {
     setDocumentos(docs);
   }, [id]);
 
-  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+  useEffect(() => { cargar(); }, [cargar]);
 
   async function handleUploaded(doc: Pick<Documento, 'nombre' | 'uri' | 'tipo' | 'tamano'>) {
     if (!id) return;
     await createDocumento({ creditoId: id, ...doc });
+    showToast({
+      title: 'Documento subido',
+      message: 'El documento se ha guardado correctamente.',
+      type: 'success'
+    });
     cargar();
   }
 
   async function handleEliminar(doc: Documento) {
-    Alert.alert('Eliminar documento', `¿Eliminar "${doc.nombre}"?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Eliminar',
-        style: 'destructive',
-        onPress: async () => {
-          try { await FileSystem.deleteAsync(doc.uri); } catch {}
-          await deleteDocumento(doc.id);
-          cargar();
-        },
-      },
-    ]);
+    try { await FileSystem.deleteAsync(doc.uri); } catch {}
+    await deleteDocumento(doc.id);
+    showToast({
+      title: 'Documento eliminado',
+      message: 'El documento ha sido eliminado.',
+      type: 'info'
+    });
+    cargar();
   }
 
   return (
@@ -52,7 +57,9 @@ export default function DocumentosCreditoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface.background },
-  uploadRow: { padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.surface.border },
+  uploadRow: { padding: spacing.md, borderBottomWidth: 2, borderBottomColor: colors.text.primary },
 });
+}

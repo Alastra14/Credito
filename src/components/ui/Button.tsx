@@ -1,9 +1,10 @@
 import React from 'react';
 import {
   TouchableOpacity, Text, ActivityIndicator, View,
-  StyleSheet, ViewStyle, TextStyle,
+  StyleSheet, ViewStyle, TextStyle, StyleProp,
 } from 'react-native';
-import { colors, fontSize, borderRadius, spacing } from '@/lib/theme';
+import { fontSize, borderRadius, spacing } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -16,29 +17,34 @@ interface ButtonProps {
   size?: ButtonSize;
   loading?: boolean;
   disabled?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   icon?: React.ReactNode;
 }
 
-const variantConfig: Record<ButtonVariant, { bg: string; text: string; border?: string }> = {
-  primary:     { bg: colors.primary.default, text: '#FFFFFF' },
-  secondary:   { bg: colors.primary.light,   text: colors.primary.dark },
-  outline:     { bg: 'transparent',          text: colors.primary.default, border: colors.primary.default },
+function getVariantConfig(colors: any): Record<ButtonVariant, { bg: string; text: string; border?: string }> {
+  return {
+  primary:     { bg: colors.surface.inverse, text: colors.text.inverse },
+  secondary:   { bg: colors.surface.card,   text: colors.text.primary, border: colors.surface.border },
+  outline:     { bg: 'transparent',          text: colors.text.primary, border: colors.text.primary },
   ghost:       { bg: 'transparent',          text: colors.text.secondary },
-  destructive: { bg: colors.destructive.default, text: '#FFFFFF' },
+  destructive: { bg: colors.destructive.default, text: colors.text.inverse },
 };
+}
 
 const sizeConfig: Record<ButtonSize, { height: number; px: number; fontSize: number }> = {
-  sm: { height: 34, px: spacing.md, fontSize: fontSize.sm },
-  md: { height: 44, px: spacing.lg, fontSize: fontSize.md },
-  lg: { height: 52, px: spacing.xl, fontSize: fontSize.lg },
+  sm: { height: 36, px: spacing.md, fontSize: fontSize.sm },
+  md: { height: 48, px: spacing.lg, fontSize: fontSize.md },
+  lg: { height: 56, px: spacing.xl, fontSize: fontSize.lg },
 };
 
 export default function Button({
   children, title, onPress, variant = 'primary', size = 'md',
   loading = false, disabled = false, style, textStyle, icon,
 }: ButtonProps) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+  const variantConfig = getVariantConfig(colors);
   const v = variantConfig[variant];
   const s = sizeConfig[size];
   const isDisabled = disabled || loading;
@@ -79,9 +85,10 @@ export default function Button({
 // Named export for backward compat
 export { Button };
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   base: {
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -89,14 +96,17 @@ const styles = StyleSheet.create({
   inner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   text: {
-    fontWeight: '600',
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
 });
+}
 

@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CreditoConPagos } from '@/types';
-import { colors, spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
+import { spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 import { formatCurrency, tipoIcon, tipoLabel, estadoPagoColor } from '@/lib/utils';
 import Badge from '@/components/ui/Badge';
 
@@ -12,6 +13,8 @@ interface CreditoCardProps {
 }
 
 export default function CreditoCard({ credito, onPress }: CreditoCardProps) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const pagados = credito.pagos.filter(p => p.estado === 'pagado').length;
   const totalPagos = credito.plazoMeses ?? 0;
   const progreso = totalPagos > 0 ? pagados / totalPagos : 0;
@@ -21,11 +24,11 @@ export default function CreditoCard({ credito, onPress }: CreditoCardProps) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={styles.container}>
       <View style={styles.header}>
-        <View style={[styles.iconContainer, { backgroundColor: colors.primary.light }]}>
+        <View style={[styles.iconContainer, { backgroundColor: colors.surface.muted }]}>
           <Ionicons
             name={tipoIcon(credito.tipo) as any}
             size={22}
-            color={colors.primary.default}
+            color={colors.text.primary}
           />
         </View>
         <View style={styles.headerInfo}>
@@ -79,101 +82,113 @@ export default function CreditoCard({ credito, onPress }: CreditoCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: {
     backgroundColor: colors.surface.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.xl,
     ...shadow.md,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.full,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: colors.surface.background,
   },
   headerInfo: {
     flex: 1,
   },
   nombre: {
-    fontSize: fontSize.md,
-    fontWeight: '600',
+    fontSize: fontSize.lg,
+    fontWeight: '900',
     color: colors.text.primary,
+    letterSpacing: -0.5,
+    textTransform: 'uppercase',
   },
   tipo: {
     fontSize: fontSize.xs,
-    color: colors.text.muted,
-    marginTop: 2,
+    color: colors.text.secondary,
+    marginTop: 4,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   headerRight: {
     alignItems: 'flex-end',
   },
   divider: {
-    height: 1,
+    height: 2,
     backgroundColor: colors.surface.border,
-    marginVertical: spacing.sm,
+    marginVertical: spacing.md,
   },
   body: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   campo: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   label: {
-    fontSize: fontSize.xs,
-    color: colors.text.muted,
-    marginBottom: 2,
+    fontSize: 10,
+    color: colors.text.secondary,
+    marginBottom: 4,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   valor: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontSize: fontSize.md,
+    fontWeight: '900',
     color: colors.text.primary,
-  },
+    letterSpacing: -0.5,
+   fontFamily: 'SpaceGrotesk_700Bold',},
   progresoContainer: {
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   progresoBar: {
     flex: 1,
-    height: 6,
-    backgroundColor: colors.surface.border,
+    height: 12,
+    backgroundColor: colors.surface.background,
     borderRadius: borderRadius.full,
     overflow: 'hidden',
   },
   progresoFill: {
     height: '100%',
     backgroundColor: colors.primary.default,
-    borderRadius: borderRadius.full,
   },
   progresoLabel: {
-    fontSize: fontSize.xs,
-    color: colors.text.muted,
-    minWidth: 55,
+    fontSize: 10,
+    color: colors.text.primary,
+    minWidth: 60,
     textAlign: 'right',
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   alertaBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
+    gap: spacing.sm,
+    marginTop: spacing.md,
     backgroundColor: colors.destructive.light,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: borderRadius.md,
   },
   alertaTexto: {
-    fontSize: fontSize.xs,
+    fontSize: 11,
     color: colors.destructive.default,
-    fontWeight: '500',
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
 });
+}

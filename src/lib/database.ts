@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import * as FileSystem from 'expo-file-system';
 import type {
   Credito, CreditoConPagos, Pago, Documento, CreditoFormData,
 } from '@/types';
@@ -25,6 +26,7 @@ async function initSchema(db: SQLite.SQLiteDatabase) {
       tipo          TEXT NOT NULL,
       saldoActual   REAL NOT NULL,
       saldoOriginal REAL NOT NULL,
+      limiteCredito REAL,
       tasaAnual     REAL NOT NULL,
       fechaCorte    INTEGER,
       fechaLimitePago INTEGER,
@@ -63,6 +65,12 @@ async function initSchema(db: SQLite.SQLiteDatabase) {
       FOREIGN KEY (creditoId) REFERENCES creditos(id) ON DELETE CASCADE
     );
   `);
+
+  try {
+    await db.execAsync(`ALTER TABLE creditos ADD COLUMN limiteCredito REAL;`);
+  } catch (e) {
+    // Ignorar si la columna ya existe
+  }
 }
 
 // ─── Row mappers (SQLite devuelve snake/camel según columna) ──────────────────
@@ -74,6 +82,7 @@ function mapCredito(row: any): Credito {
     tipo: row.tipo,
     saldoActual: row.saldoActual,
     saldoOriginal: row.saldoOriginal,
+    limiteCredito: row.limiteCredito ?? null,
     tasaAnual: row.tasaAnual,
     fechaCorte: row.fechaCorte ?? null,
     fechaLimitePago: row.fechaLimitePago ?? null,
@@ -123,6 +132,25 @@ export async function getCreditos(): Promise<Credito[]> {
   return rows.map(mapCredito);
 }
 
+export async function getCreditosConPagos(): Promise<CreditoConPagos[]> {
+  const db = await getDb();
+  const creditosRows = await db.getAllAsync<any>('SELECT * FROM creditos ORDER BY creadoEn DESC');
+  const pagosRows = await db.getAllAsync<any>('SELECT * FROM pagos ORDER BY anio DESC, mes DESC');
+  const docsRows = await db.getAllAsync<any>('SELECT * FROM documentos ORDER BY creadoEn DESC');
+
+  const pagos = pagosRows.map(mapPago);
+  const documentos = docsRows.map(mapDocumento);
+
+  return creditosRows.map(row => {
+    const credito = mapCredito(row);
+    return {
+      ...credito,
+      pagos: pagos.filter(p => p.creditoId === credito.id),
+      documentos: documentos.filter(d => d.creditoId === credito.id),
+    };
+  });
+}
+
 export async function getCreditoById(id: string): Promise<CreditoConPagos | null> {
   const db = await getDb();
   const row = await db.getFirstAsync<any>('SELECT * FROM creditos WHERE id = ?', [id]);
@@ -148,12 +176,12 @@ export async function createCredito(data: CreditoFormData): Promise<Credito> {
   const now = new Date().toISOString();
   await db.runAsync(
     `INSERT INTO creditos
-      (id,nombre,tipo,saldoActual,saldoOriginal,tasaAnual,fechaCorte,fechaLimitePago,
+      (id,nombre,tipo,saldoActual,saldoOriginal,limiteCredito,tasaAnual,fechaCorte,fechaLimitePago,
        pagoMinimo,cuotaMensual,plazoMeses,estado,institucion,notas,creadoEn,actualizadoEn)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id, data.nombre, data.tipo,
-      data.saldoActual, data.saldoOriginal, data.tasaAnual,
+      data.saldoActual, data.saldoOriginal, data.limiteCredito ?? null, data.tasaAnual,
       data.fechaCorte ?? null, data.fechaLimitePago ?? null,
       data.pagoMinimo ?? null, data.cuotaMensual ?? null,
       data.plazoMeses ?? null, data.estado,
@@ -161,8 +189,29 @@ export async function createCredito(data: CreditoFormData): Promise<Credito> {
       now, now,
     ],
   );
+
+  if (data.documentosPendientes && data.documentosPendientes.length > 0) {
+    for (const doc of data.documentosPendientes) {
+      const dir = FileSystem.documentDirectory + `creditos/${id}/`;
+      await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+      const ext = doc.nombre.split('.').pop() ?? 'bin';
+      const destName = `${generateId()}.${ext}`;
+      const destUri = dir + destName;
+      await FileSystem.copyAsync({ from: doc.uri, to: destUri });
+
+      await createDocumento({
+        creditoId: id,
+        nombre: doc.nombre,
+        tipo: doc.tipo,
+        uri: destUri,
+        tamano: doc.tamano,
+      });
+    }
+  }
+
   return mapCredito({
     id, ...data,
+    limiteCredito: data.limiteCredito ?? null,
     fechaCorte: data.fechaCorte ?? null,
     fechaLimitePago: data.fechaLimitePago ?? null,
     pagoMinimo: data.pagoMinimo ?? null,
@@ -180,6 +229,7 @@ export async function updateCredito(id: string, data: Partial<CreditoFormData>):
   const fieldMap: Record<string, string> = {
     nombre: 'nombre', tipo: 'tipo',
     saldoActual: 'saldoActual', saldoOriginal: 'saldoOriginal',
+    limiteCredito: 'limiteCredito',
     tasaAnual: 'tasaAnual', fechaCorte: 'fechaCorte',
     fechaLimitePago: 'fechaLimitePago', pagoMinimo: 'pagoMinimo',
     cuotaMensual: 'cuotaMensual', plazoMeses: 'plazoMeses',
@@ -193,17 +243,43 @@ export async function updateCredito(id: string, data: Partial<CreditoFormData>):
       vals.push((data as any)[key] ?? null);
     }
   }
-  if (sets.length === 0) return;
-  vals.push(now, id);
-  await db.runAsync(
-    `UPDATE creditos SET ${sets.join(', ')}, actualizadoEn = ? WHERE id = ?`,
-    vals,
-  );
+  if (sets.length > 0) {
+    vals.push(now, id);
+    await db.runAsync(
+      `UPDATE creditos SET ${sets.join(', ')}, actualizadoEn = ? WHERE id = ?`,
+      vals,
+    );
+  }
+
+  if (data.documentosPendientes && data.documentosPendientes.length > 0) {
+    for (const doc of data.documentosPendientes) {
+      const dir = FileSystem.documentDirectory + `creditos/${id}/`;
+      await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+      const ext = doc.nombre.split('.').pop() ?? 'bin';
+      const destName = `${generateId()}.${ext}`;
+      const destUri = dir + destName;
+      await FileSystem.copyAsync({ from: doc.uri, to: destUri });
+
+      await createDocumento({
+        creditoId: id,
+        nombre: doc.nombre,
+        tipo: doc.tipo,
+        uri: destUri,
+        tamano: doc.tamano,
+      });
+    }
+  }
 }
 
 export async function deleteCredito(id: string): Promise<void> {
   const db = await getDb();
   await db.runAsync('DELETE FROM creditos WHERE id = ?', [id]);
+}
+
+export async function updateCreditoSaldo(id: string, nuevoSaldo: number): Promise<void> {
+  const db = await getDb();
+  const now = new Date().toISOString();
+  await db.runAsync('UPDATE creditos SET saldoActual = ?, actualizadoEn = ? WHERE id = ?', [nuevoSaldo, now, id]);
 }
 
 // ─── PAGOS ──────────────────────────────────────────────────────────────────

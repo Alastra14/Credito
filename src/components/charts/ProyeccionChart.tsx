@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { ProyeccionCredito } from '@/types';
-import { colors, fontSize, spacing, borderRadius, shadow } from '@/lib/theme';
+import { fontSize, spacing, borderRadius, shadow } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 import { formatCurrency } from '@/lib/utils';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -20,6 +21,8 @@ interface Props {
 }
 
 export default function ProyeccionChart({ proyecciones }: Props) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   if (proyecciones.length === 0) return null;
 
   const maxMeses = Math.max(...proyecciones.map(p => p.meses.length));
@@ -83,7 +86,8 @@ export default function ProyeccionChart({ proyecciones }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: {
     backgroundColor: colors.surface.card,
     borderRadius: borderRadius.lg,
@@ -123,3 +127,4 @@ const styles = StyleSheet.create({
     maxWidth: 90,
   },
 });
+}

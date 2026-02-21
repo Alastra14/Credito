@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { EstrategiaDetalle } from '@/types';
-import { colors, spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
+import { spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 import { formatCurrency } from '@/lib/utils';
 
 interface Props {
@@ -18,6 +19,8 @@ interface FilaProps {
 }
 
 function Fila({ label, valA, valB, mejorA }: FilaProps) {
+  const { colors } = useTheme();
+  const filaStyles = getFilaStyles(colors);
   return (
     <View style={filaStyles.container}>
       <Text style={filaStyles.label}>{label}</Text>
@@ -33,18 +36,21 @@ function Fila({ label, valA, valB, mejorA }: FilaProps) {
   );
 }
 
-const filaStyles = StyleSheet.create({
+function getFilaStyles(colors: any) {
+  return StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surface.border,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.text.primary,
   },
   label: {
     flex: 1,
-    fontSize: fontSize.xs,
+    fontSize: 11,
     color: colors.text.secondary,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   celda: {
     width: 110,
@@ -52,25 +58,29 @@ const filaStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: 4,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 4,
-    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: borderRadius.md,
   },
   celdaGanadora: {
-    backgroundColor: colors.success.light,
+    backgroundColor: colors.primary.default,
   },
   valor: {
     fontSize: fontSize.sm,
     color: colors.text.primary,
     textAlign: 'right',
-  },
+    fontWeight: '900',
+   fontFamily: 'SpaceGrotesk_700Bold',},
   valorGanador: {
-    fontWeight: '700',
-    color: colors.success.default,
+    fontWeight: '900',
+    color: colors.text.primary,
   },
 });
+}
 
 export default function ComparacionTabla({ avalancha, bolaNieve }: Props) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const aMenosMeses = avalancha.mesesTotal <= bolaNieve.mesesTotal;
   const aMenosInteres = avalancha.interesTotal <= bolaNieve.interesTotal;
   const aMenosCosto = avalancha.costoTotal <= bolaNieve.costoTotal;
@@ -123,17 +133,18 @@ export default function ComparacionTabla({ avalancha, bolaNieve }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: {
     backgroundColor: colors.surface.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    padding: spacing.lg,
+    borderRadius: borderRadius.xl,
     ...shadow.md,
   },
   encabezado: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   encabezadoLabel: {
     flex: 1,
@@ -144,7 +155,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: 4,
-    paddingHorizontal: spacing.xs,
+    paddingHorizontal: spacing.sm,
   },
   encabezadoColB: {
     width: 110,
@@ -152,26 +163,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: 4,
-    paddingHorizontal: spacing.xs,
+    paddingHorizontal: spacing.sm,
   },
   encabezadoTitulo: {
-    fontSize: fontSize.xs,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '900',
     color: colors.text.primary,
+    textTransform: 'uppercase',
   },
   nota: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-    backgroundColor: colors.surface.muted,
-    borderRadius: borderRadius.sm,
-    padding: spacing.sm,
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    backgroundColor: colors.surface.background,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
   },
   notaTexto: {
     flex: 1,
-    fontSize: fontSize.xs,
-    color: colors.text.muted,
+    fontSize: 11,
+    color: colors.text.secondary,
     lineHeight: 16,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
 });
+}

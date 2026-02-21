@@ -1,30 +1,54 @@
-import React, { useEffect } from 'react';
-import { Drawer } from 'expo-router/drawer';
+import React, { useEffect, useState } from 'react';
+import { Tabs } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { DrawerContentScrollView, DrawerItemList, DrawerContentComponentProps } from '@react-navigation/drawer';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, fontSize } from '@/lib/theme';
+import { spacing, fontSize } from '@/lib/theme';
+import { ThemeProvider, useTheme } from '@/lib/ThemeContext';
 import { requestNotificationPermissions, scheduleRemindersForAllCreditos } from '@/lib/notifications';
 import { getCreditos } from '@/lib/database';
+import * as Sentry from '@sentry/react-native';
+import CustomTabBar from '@/components/ui/CustomTabBar';
+import { ToastProvider } from '@/components/ui/Toast';
+import { TabBarProvider } from '@/lib/TabBarContext';
+import { LanguageProvider } from '@/lib/LanguageContext';
+import { hasSeenOnboarding, setHasSeenOnboarding, hasPin } from '@/lib/auth';
+import OnboardingScreen from '@/components/auth/OnboardingScreen';
+import LoginScreen from '@/components/auth/LoginScreen';
+import { useFonts, SpaceGrotesk_400Regular, SpaceGrotesk_500Medium, SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
+import * as SplashScreen from 'expo-splash-screen';
 
-function CustomDrawerContent(props: DrawerContentComponentProps) {
-  return (
-    <DrawerContentScrollView {...props} style={styles.drawer}>
-      <View style={styles.drawerHeader}>
-        <View style={styles.logoCircle}>
-          <Ionicons name="wallet" size={28} color="#fff" />
-        </View>
-        <Text style={styles.drawerTitle}>Mis Créditos</Text>
-        <Text style={styles.drawerSubtitle}>Gestión personal</Text>
-      </View>
-      <DrawerItemList {...props} />
-    </DrawerContentScrollView>
-  );
-}
+SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+Sentry.init({
+  dsn: 'https://1ef7421928f5c2c87eedbe05f644f516@o4510921770926080.ingest.us.sentry.io/4510921791176704',
+  debug: false, // Set to true to see Sentry logs
+});
+
+function RootLayout() {
+  const { colors, theme } = useTheme();
+  const [isReady, setIsReady] = useState(false);
+  const [seenOnboarding, setSeenOnboarding] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const [fontsLoaded] = useFonts({
+    SpaceGrotesk_400Regular,
+    SpaceGrotesk_500Medium,
+    SpaceGrotesk_600SemiBold,
+    SpaceGrotesk_700Bold,
+  });
+
   useEffect(() => {
     async function init() {
+      const seen = await hasSeenOnboarding();
+      setSeenOnboarding(seen);
+      
+      const pinExists = await hasPin();
+      if (!pinExists && seen) {
+        // If they've seen onboarding but have no PIN, they need to set one
+        setIsAuthenticated(false);
+      }
+
       await requestNotificationPermissions();
       const cs = await getCreditos();
       await scheduleRemindersForAllCreditos(
@@ -35,118 +59,121 @@ export default function RootLayout() {
             nombre: c.nombre,
             cuotaMensual: c.cuotaMensual ?? c.pagoMinimo ?? 0,
             fechaLimitePago: c.fechaLimitePago,
+            fechaCorte: c.fechaCorte,
           })),
       );
+      setIsReady(true);
     }
     init();
   }, []);
 
+  useEffect(() => {
+    if (isReady && fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [isReady, fontsLoaded]);
+
+  if (!isReady || !fontsLoaded) {
+    return null; // Or a splash screen
+  }
+
+  if (!seenOnboarding) {
+    return (
+      <ToastProvider>
+        <OnboardingScreen onComplete={async () => {
+          await setHasSeenOnboarding(true);
+          setSeenOnboarding(true);
+        }} />
+      </ToastProvider>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <ToastProvider>
+        <LoginScreen onLogin={() => setIsAuthenticated(true)} />
+      </ToastProvider>
+    );
+  }
+
   return (
-    <Drawer
-      drawerContent={(props) => <CustomDrawerContent {...props} />}
-      screenOptions={{
-        headerStyle: { backgroundColor: colors.primary.default },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: '700' },
-        drawerActiveTintColor: colors.primary.default,
-        drawerInactiveTintColor: colors.text.secondary,
-        drawerActiveBackgroundColor: colors.primary.light,
-        drawerStyle: { backgroundColor: colors.surface.background },
-      }}
-    >
-      <Drawer.Screen
-        name="index"
-        options={{
-          title: 'Dashboard',
-          drawerLabel: 'Dashboard',
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="creditos"
-        options={{
-          title: 'Mis Créditos',
-          drawerLabel: 'Mis Créditos',
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="card-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="pagos"
-        options={{
-          title: 'Pagos',
-          drawerLabel: 'Pagos',
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="checkmark-circle-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="proyecciones"
-        options={{
-          title: 'Proyecciones',
-          drawerLabel: 'Proyecciones',
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="trending-down-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="priorizacion"
-        options={{
-          title: 'Priorización',
-          drawerLabel: 'Priorización',
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="podium-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="reportes"
-        options={{
-          title: 'Reportes',
-          drawerLabel: 'Reportes',
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="bar-chart-outline" size={size} color={color} />
-          ),
-        }}
-      />
-    </Drawer>
+    <LanguageProvider>
+      <TabBarProvider>
+        <ToastProvider>
+          <StatusBar style={theme === 'dark' ? 'light' : 'dark'} backgroundColor="transparent" translucent />
+          <Tabs
+            tabBar={(props) => <CustomTabBar {...props} />}
+            screenOptions={{
+              headerStyle: { backgroundColor: colors.surface.background, elevation: 0, shadowOpacity: 0, borderBottomWidth: 0 },
+              headerTintColor: colors.text.primary,
+              headerTitleStyle: { fontFamily: 'sans-serif-condensed', fontWeight: '900', textTransform: 'uppercase', letterSpacing: -0.5 },
+            }}
+          >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Inicio',
+          }}
+        />
+        <Tabs.Screen
+          name="creditos"
+          options={{
+            headerShown: false,
+            title: 'Créditos',
+          }}
+        />
+        <Tabs.Screen
+          name="add"
+          options={{
+            title: '',
+          }}
+        />
+        <Tabs.Screen
+          name="pagos/index"
+          options={{
+            title: 'Pagos',
+          }}
+        />
+        <Tabs.Screen
+          name="configuracion/index"
+          options={{
+            title: 'Ajustes',
+          }}
+        />
+        <Tabs.Screen
+          name="reportes/index"
+          options={{
+            href: null,
+            title: 'Reportes',
+          }}
+        />
+        <Tabs.Screen
+          name="proyecciones/index"
+          options={{
+            href: null,
+            title: 'Proyecciones',
+          }}
+        />
+        <Tabs.Screen
+          name="priorizacion/index"
+          options={{
+            href: null,
+            title: 'Priorización',
+          }}
+        />
+      </Tabs>
+        </ToastProvider>
+      </TabBarProvider>
+    </LanguageProvider>
   );
 }
 
-const styles = StyleSheet.create({
-  drawer: {
-    backgroundColor: colors.surface.background,
-  },
-  drawerHeader: {
-    padding: spacing.lg,
-    paddingTop: spacing.xl,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surface.border,
-    marginBottom: spacing.sm,
-  },
-  logoCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primary.default,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  drawerTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-    color: colors.text.primary,
-  },
-  drawerSubtitle: {
-    fontSize: fontSize.xs,
-    color: colors.text.muted,
-    marginTop: 2,
-  },
-});
+function App() {
+  return (
+    <ThemeProvider>
+      <RootLayout />
+    </ThemeProvider>
+  );
+}
+
+export default Sentry.wrap(App);

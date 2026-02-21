@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Créditos",
+    "name": "Debtless",
     "slug": "credito",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -34,10 +34,21 @@
         }
       ],
       "expo-document-picker",
-      "expo-asset"
+      "expo-asset",
+      [
+        "@sentry/react-native",
+        {
+          "organization": "all-inc",
+          "project": "react-native",
+          "url": "https://sentry.io/"
+        }
+      ],
+      "expo-secure-store",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "newArchEnabled": true
   }
 }

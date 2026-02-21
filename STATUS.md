@@ -93,7 +93,8 @@ App móvil Android (Expo / React Native) para gestión personal de créditos. Pe
 - `pagos/index.tsx` — Vista mensual de todos los pagos con selector de mes
 - `proyecciones/index.tsx` — Selector de créditos, pago extra, gráfica + tabla de amortización en acordeón
 - `priorizacion/index.tsx` — Input de presupuesto, cálculo Avalancha/Bola de nieve, comparación
-- `reportes/index.tsx` — Las 4 gráficas en scroll vertical
+- `reportes/index.tsx` — Las 4 gráficas en scroll vertical con botón para exportar/compartir como imagen
+- `configuracion/index.tsx` — Exportar e importar base de datos SQLite (Backup/Restore)
 
 ### Assets
 - `assets/icon.png` (1024×1024)
@@ -117,19 +118,14 @@ App móvil Android (Expo / React Native) para gestión personal de créditos. Pe
 3. **Prueba en dispositivo** — nunca se ha corrido en un Android real. Puede haber errores en tiempo de ejecución que TypeScript no detecta (SQLite, permisos, notificaciones).
 
 ### Funcionalidad pendiente
-4. **Pantalla de crédito [id] no tiene tabs** — los botones "Pagos" / "Docs" / "Editar" son simples `TouchableOpacity` que navegan por push. Podría mejorar con tab bar interno.
-5. **Sin paginación** — `CreditoList` y `PagoTabla` cargan todos los registros. Con muchos datos puede ser lento.
-6. **Sin búsqueda** — no hay campo de búsqueda en la lista de créditos.
-7. **Sin exportar/compartir reportes** — no se pueden exportar las gráficas o tablas como PDF/imagen.
-8. **Sin backup/restore** — la base de datos SQLite es local y se elimina si se desinstala la app.
+*(Todas las funcionalidades principales han sido implementadas. Queda pendiente el diseño de assets y pruebas en dispositivo real).*
 
 ### Bugs conocidos / por verificar
 9. **`cancelNotificationsForPago` recibe 3 args** — en `app/creditos/[id]/pagos.tsx` se llama correctamente con `(pago.creditoId, pago.mes, pago.anio)`. Verificar que en `app/pagos/index.tsx` también sea correcto (✅ ya corregido, pero hay que probar).
 10. **`calcularProyeccionMultiple`** (en `proyeccion.ts`) retorna filas de gráfica planas `{ mes, [creditoId]: number }`, **no** `ProyeccionCredito[]`. Las pantallas ahora usan `calcularProyeccion` por crédito individualmente. Verificar que la leyenda de `ProyeccionChart` funcione en runtime.
 11. **`node_modules` no incluido en git** — en otra máquina hay que `npm install` antes de `npx expo start`.
 12. **Push a GitHub dio exit code 1** aunque sí subió la rama `main` como `[new branch]`. Comprobar en `github.com/Alastra14/Credito` que el código esté visible.
-13. **`base de otro doc`** — hay un archivo suelto en la raíz del proyecto que no es código. Limpiar antes de release.
-14. **Drawer en Android** — el gesto de swipe para abrir el drawer puede interferir con scroll horizontal en gráficas. Por verificar.
+13. **Drawer en Android** — el gesto de swipe para abrir el drawer puede interferir con scroll horizontal en gráficas. Por verificar.
 
 ---
 
@@ -175,6 +171,7 @@ app/
   proyecciones/index.tsx
   priorizacion/index.tsx
   reportes/index.tsx
+  configuracion/index.tsx
 assets/                    ← íconos placeholder (reemplazar)
 src/
   types/index.ts           ← todos los tipos TypeScript

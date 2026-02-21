@@ -1,20 +1,38 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert,
+  View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Badge from '@/components/ui/Badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
+import AppModal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
 import { CreditoConPagos } from '@/types';
 import { getCreditoById, deleteCredito } from '@/lib/database';
 import { cancelNotificationsForCredito } from '@/lib/notifications';
-import { colors, spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
+import { spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 import { formatCurrency, tipoLabel, tipoIcon } from '@/lib/utils';
+import { useScrollHideTabBar } from '@/lib/useScrollHideTabBar';
+import { useToast } from '@/components/ui/Toast';
+import PagosCreditoScreen from './_pagos';
+import DocumentosCreditoScreen from './_documentos';
+
+type Tab = 'detalle' | 'pagos' | 'documentos';
 
 export default function CreditoDetailScreen() {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+  const dataStyles = getDataStyles(colors);
   const { id } = useLocalSearchParams<{ id: string }>();
   const [credito, setCredito] = useState<CreditoConPagos | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>('detalle');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const { onScroll, scrollEventThrottle } = useScrollHideTabBar();
+  const { showToast } = useToast();
+  const { width } = Dimensions.get('window');
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const cargar = useCallback(async () => {
     if (!id) return;
@@ -29,36 +47,87 @@ export default function CreditoDetailScreen() {
   const pagadosCount = credito.pagos.filter(p => p.estado === 'pagado').length;
 
   function confirmDelete() {
-    Alert.alert(
-      'Eliminar crédito',
-      `¿Seguro que deseas eliminar "${credito!.nombre}"? Se eliminarán todos sus pagos y documentos.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            await cancelNotificationsForCredito(credito!.id);
-            await deleteCredito(credito!.id);
-            router.replace('/creditos');
-          },
-        },
-      ]
-    );
+    setShowDeleteModal(true);
   }
 
+  async function handleDelete() {
+    if (!credito) return;
+    await cancelNotificationsForCredito(credito.id);
+    await deleteCredito(credito.id);
+    showToast({
+      title: 'Crédito eliminado',
+      message: `El crédito "${credito.nombre}" ha sido eliminado.`,
+      type: 'info'
+    });
+    setShowDeleteModal(false);
+    router.replace('/creditos');
+  }
+
+  const handleTabPress = (tab: Tab, index: number) => {
+    setActiveTab(tab);
+    scrollViewRef.current?.scrollTo({ x: index * width, animated: true });
+  };
+
+  const handleMomentumScrollEnd = (event: any) => {
+    const x = event.nativeEvent.contentOffset.x;
+    const index = Math.round(x / width);
+    const tabs: Tab[] = ['detalle', 'pagos', 'documentos'];
+    if (tabs[index] && tabs[index] !== activeTab) {
+      setActiveTab(tabs[index]);
+    }
+  };
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Encabezado */}
-      <View style={styles.heroRow}>
-        <View style={[styles.iconBox, { backgroundColor: colors.primary.light }]}>
-          <Ionicons name={tipoIcon(credito.tipo) as any} size={28} color={colors.primary.default} />
-        </View>
-        <View style={styles.heroInfo}>
-          <Text style={styles.nombre}>{credito.nombre}</Text>
-          <Text style={styles.tipo}>{tipoLabel(credito.tipo)}</Text>
-          {credito.institucion && <Text style={styles.institucion}>{credito.institucion}</Text>}
-        </View>
+    <View style={styles.container}>
+      {/* Tabs Header */}
+      <View style={styles.tabsContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'detalle' && styles.activeTab]}
+          onPress={() => handleTabPress('detalle', 0)}
+        >
+          <Text style={[styles.tabText, activeTab === 'detalle' && styles.activeTabText]}>Detalle</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'pagos' && styles.activeTab]}
+          onPress={() => handleTabPress('pagos', 1)}
+        >
+          <Text style={[styles.tabText, activeTab === 'pagos' && styles.activeTabText]}>Pagos</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'documentos' && styles.activeTab]}
+          onPress={() => handleTabPress('documentos', 2)}
+        >
+          <Text style={[styles.tabText, activeTab === 'documentos' && styles.activeTabText]}>Docs</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        ref={scrollViewRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handleMomentumScrollEnd}
+        style={{ flex: 1 }}
+        scrollEnabled={false}
+      >
+        {/* Tab 1: Detalle */}
+        <View style={{ width, flex: 1 }}>
+          <ScrollView 
+            style={styles.scrollContainer} 
+            contentContainerStyle={styles.content}
+            onScroll={onScroll}
+            scrollEventThrottle={scrollEventThrottle}
+          >
+            {/* Encabezado */}
+        <View style={styles.heroRow}>
+          <View style={styles.iconBox}>
+            <Ionicons name={tipoIcon(credito.tipo) as any} size={32} color={colors.text.primary} />
+          </View>
+          <View style={styles.heroInfo}>
+            <Text style={styles.nombre}>{credito.nombre}</Text>
+            <Text style={styles.tipo}>{tipoLabel(credito.tipo)}</Text>
+            {credito.institucion && <Text style={styles.institucion}>{credito.institucion}</Text>}
+          </View>
         <Badge
           variant={
             credito.estado === 'activo' ? 'default' :
@@ -118,29 +187,66 @@ export default function CreditoDetailScreen() {
       )}
 
       {/* Acciones */}
-      <View style={styles.acciones}>
-        <TouchableOpacity style={styles.accionBtn} onPress={() => router.push(`/creditos/${id}/pagos`)}>
-          <Ionicons name="checkmark-circle-outline" size={20} color={colors.primary.default} />
-          <Text style={styles.accionLabel}>Pagos</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.accionBtn} onPress={() => router.push(`/creditos/${id}/documentos`)}>
-          <Ionicons name="document-outline" size={20} color={colors.info.default} />
-          <Text style={styles.accionLabel}>Docs</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.accionBtn} onPress={() => router.push(`/creditos/${id}/editar`)}>
-          <Ionicons name="pencil-outline" size={20} color={colors.warning.default} />
-          <Text style={styles.accionLabel}>Editar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.accionBtn} onPress={confirmDelete}>
-          <Ionicons name="trash-outline" size={20} color={colors.destructive.default} />
-          <Text style={[styles.accionLabel, { color: colors.destructive.default }]}>Eliminar</Text>
-        </TouchableOpacity>
+      <View style={styles.modalActions}>
+        <Button 
+          variant="outline" 
+          onPress={() => router.push(`/creditos/${id}/editar`)}
+          style={styles.modalBtn}
+        >
+          Editar
+        </Button>
+        <Button 
+          onPress={confirmDelete}
+          style={[styles.modalBtn, { backgroundColor: colors.destructive.default }]}
+        >
+          Eliminar
+        </Button>
       </View>
-    </ScrollView>
+          </ScrollView>
+        </View>
+
+        {/* Tab 2: Pagos */}
+        <View style={{ width, flex: 1 }}>
+          <PagosCreditoScreen />
+        </View>
+
+        {/* Tab 3: Documentos */}
+        <View style={{ width, flex: 1 }}>
+          <DocumentosCreditoScreen />
+        </View>
+      </ScrollView>
+
+      <AppModal
+        visible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Eliminar crédito"
+      >
+        <Text style={styles.modalText}>
+          ¿Seguro que deseas eliminar "{credito?.nombre}"? Se eliminarán todos sus pagos y documentos.
+        </Text>
+        <View style={styles.modalActions}>
+          <Button 
+            variant="outline" 
+            onPress={() => setShowDeleteModal(false)}
+            style={styles.modalBtn}
+          >
+            Cancelar
+          </Button>
+          <Button 
+            onPress={handleDelete}
+            style={[styles.modalBtn, { backgroundColor: colors.destructive.default }]}
+          >
+            Eliminar
+          </Button>
+        </View>
+      </AppModal>
+    </View>
   );
 }
 
 function DataItem({ label, value }: { label: string; value: string }) {
+  const { colors } = useTheme();
+  const dataStyles = getDataStyles(colors);
   return (
     <View style={dataStyles.item}>
       <Text style={dataStyles.label}>{label}</Text>
@@ -149,43 +255,89 @@ function DataItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-const dataStyles = StyleSheet.create({
-  item: { width: '48%', marginBottom: spacing.sm },
-  label: { fontSize: fontSize.xs, color: colors.text.muted },
-  value: { fontSize: fontSize.sm, fontWeight: '600', color: colors.text.primary },
+function getDataStyles(colors: any) {
+  return StyleSheet.create({
+  item: { width: '48%', marginBottom: spacing.md },
+  label: { fontSize: 10, color: colors.text.secondary, fontWeight: '700', textTransform: 'uppercase', marginBottom: 4 },
+  value: { fontSize: fontSize.md, fontWeight: '900', color: colors.text.primary, letterSpacing: -0.5, fontFamily: 'SpaceGrotesk_700Bold' },
 });
+}
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface.background },
-  content: { padding: spacing.md, gap: spacing.sm },
-  heroRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xs },
+  scrollContainer: { flex: 1 },
+  tabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface.card,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.text.primary,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    borderBottomWidth: 4,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {
+    borderBottomColor: colors.primary.default,
+  },
+  tabText: {
+    fontSize: fontSize.sm,
+    fontWeight: '900',
+    color: colors.text.secondary,
+    textTransform: 'uppercase',
+  },
+  activeTabText: {
+    color: colors.text.primary,
+    fontWeight: '900',
+  },
+  content: { padding: spacing.lg, gap: spacing.md },
+  heroRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm },
   iconBox: {
-    width: 52, height: 52, borderRadius: borderRadius.full,
+    width: 64, height: 64,
     alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.primary.default,
+    borderRadius: borderRadius.xl,
+    ...shadow.sm,
   },
   heroInfo: { flex: 1 },
-  nombre: { fontSize: fontSize.xl, fontWeight: '700', color: colors.text.primary },
-  tipo: { fontSize: fontSize.sm, color: colors.text.secondary },
-  institucion: { fontSize: fontSize.xs, color: colors.text.muted },
+  nombre: { fontSize: fontSize.xxl, fontWeight: '900', color: colors.text.primary, letterSpacing: -1, textTransform: 'uppercase' },
+  tipo: { fontSize: fontSize.sm, color: colors.text.secondary, fontWeight: '900', textTransform: 'uppercase' },
+  institucion: { fontSize: fontSize.xs, color: colors.text.secondary, fontWeight: '900', textTransform: 'uppercase' },
   card: { marginBottom: 0 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  notas: { fontSize: fontSize.sm, color: colors.text.muted, marginTop: spacing.sm, fontStyle: 'italic' },
-  progresoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  notas: { fontSize: fontSize.sm, color: colors.text.secondary, marginTop: spacing.md, fontWeight: '600' },
+  progresoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   progresoBar: {
-    flex: 1, height: 8, backgroundColor: colors.surface.border,
-    borderRadius: borderRadius.full, overflow: 'hidden',
+    flex: 1, height: 16, backgroundColor: colors.surface.background,
+    borderRadius: borderRadius.full,
+    overflow: 'hidden',
   },
   progresoFill: {
-    height: '100%', backgroundColor: colors.primary.default, borderRadius: borderRadius.full,
+    height: '100%', backgroundColor: colors.primary.default,
   },
-  progresoLabel: { fontSize: fontSize.sm, color: colors.text.muted },
+  progresoLabel: { fontSize: fontSize.sm, color: colors.text.primary, fontWeight: '900' },
   acciones: {
     flexDirection: 'row', justifyContent: 'space-around',
     backgroundColor: colors.surface.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    ...shadow.sm,
+    padding: spacing.lg,
+    borderRadius: borderRadius.xl,
+    ...shadow.md,
   },
-  accionBtn: { alignItems: 'center', gap: 4 },
-  accionLabel: { fontSize: fontSize.xs, color: colors.text.secondary },
-});
+  accionBtn: { alignItems: 'center', gap: 8 },
+  accionLabel: { fontSize: fontSize.xs, color: colors.text.primary, fontWeight: '900', textTransform: 'uppercase' },  modalText: {
+    fontSize: fontSize.md,
+    color: colors.text.secondary,
+    marginBottom: spacing.xl,
+    textAlign: 'center',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  modalBtn: {
+    flex: 1,
+  },});
+}

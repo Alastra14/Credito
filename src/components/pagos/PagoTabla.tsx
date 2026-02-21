@@ -4,7 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import Badge from '@/components/ui/Badge';
 import { PagoMensualEstado, Pago } from '@/types';
 import { MESES } from '@/lib/constants';
-import { colors, spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
+import { spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 interface Props {
@@ -15,6 +16,9 @@ interface Props {
 }
 
 export default function PagoTabla({ pagosEstado, anio, onPagar, onEliminar }: Props) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+
   return (
     <FlatList
       data={pagosEstado}
@@ -71,69 +75,76 @@ export default function PagoTabla({ pagosEstado, anio, onPagar, onEliminar }: Pr
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   lista: {
-    gap: spacing.xs,
+    gap: spacing.md,
   },
   fila: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
     ...shadow.sm,
   },
   filaVencida: {
-    borderLeftWidth: 3,
+    borderLeftWidth: 6,
     borderLeftColor: colors.destructive.default,
   },
   mesCol: {
-    width: 56,
+    width: 64,
   },
   mesLabel: {
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontWeight: '900',
     color: colors.text.primary,
-  },
+    textTransform: 'uppercase',
+   fontFamily: 'SpaceGrotesk_700Bold',},
   anioLabel: {
-    fontSize: fontSize.xs,
-    color: colors.text.muted,
-  },
+    fontSize: 10,
+    color: colors.text.secondary,
+    fontWeight: '900',
+   fontFamily: 'SpaceGrotesk_700Bold',},
   montoCol: {
     flex: 1,
   },
   monto: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontSize: fontSize.md,
+    fontWeight: '900',
     color: colors.text.primary,
-  },
+    letterSpacing: -0.5,
+   fontFamily: 'SpaceGrotesk_700Bold',},
   fecha: {
-    fontSize: fontSize.xs,
-    color: colors.text.muted,
-  },
+    fontSize: 10,
+    color: colors.text.secondary,
+    fontWeight: '900',
+   fontFamily: 'SpaceGrotesk_700Bold',},
   montoVacio: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.md,
     color: colors.text.disabled,
-  },
+    fontWeight: '900',
+   fontFamily: 'SpaceGrotesk_700Bold',},
   estadoCol: {
-    marginHorizontal: spacing.xs,
+    marginHorizontal: spacing.sm,
   },
   accionesCol: {
-    width: 64,
+    width: 72,
     alignItems: 'flex-end',
   },
   pagarBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: colors.primary.default,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 5,
+    backgroundColor: colors.text.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
   },
   pagarLabel: {
-    fontSize: fontSize.xs,
-    color: '#fff',
-    fontWeight: '600',
+    fontSize: 10,
+    color: colors.surface.background,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
 });
+}

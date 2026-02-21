@@ -1,7 +1,7 @@
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import * as Crypto from 'expo-crypto';
-import { colors } from '@/lib/theme';
+import { useTheme } from '@/lib/ThemeContext';
 import type { EstadoPago, TipoCredito } from '@/types';
 
 export function generateId(): string {
@@ -35,7 +35,7 @@ export function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function estadoPagoColor(estado: EstadoPago): string {
+export function estadoPagoColor(estado: EstadoPago, colors: any): string {
   switch (estado) {
     case 'pagado':    return colors.success.default;
     case 'parcial':   return colors.info.default;
@@ -44,7 +44,7 @@ export function estadoPagoColor(estado: EstadoPago): string {
   }
 }
 
-export function estadoPagoBgColor(estado: EstadoPago): string {
+export function estadoPagoBgColor(estado: EstadoPago, colors: any): string {
   switch (estado) {
     case 'pagado':    return colors.success.light;
     case 'parcial':   return colors.info.light;
@@ -53,7 +53,7 @@ export function estadoPagoBgColor(estado: EstadoPago): string {
   }
 }
 
-export function estadoPagoTextColor(estado: EstadoPago): string {
+export function estadoPagoTextColor(estado: EstadoPago, colors: any): string {
   switch (estado) {
     case 'pagado':    return colors.success.text;
     case 'parcial':   return colors.info.text;
