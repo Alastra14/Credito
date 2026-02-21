@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/lib/ThemeContext';
 import { spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
@@ -21,6 +21,8 @@ export default function LoginScreen({ onLogin }: Props) {
   const [confirmPin, setConfirmPin] = useState('');
   const [step, setStep] = useState<'enter' | 'set' | 'confirm'>('enter');
   const { showToast } = useToast();
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     checkPinStatus();
@@ -34,6 +36,24 @@ export default function LoginScreen({ onLogin }: Props) {
     }
   };
 
+  const triggerSuccessAnimation = () => {
+    Animated.parallel([
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 600,
+        easing: Easing.out(Easing.exp),
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      onLogin();
+    });
+  };
+
   const handleKeyPress = async (key: string) => {
     if (key === 'backspace') {
       setPinState(prev => prev.slice(0, -1));
@@ -45,7 +65,7 @@ export default function LoginScreen({ onLogin }: Props) {
         if (step === 'enter') {
           const isValid = await verifyPin(newPin);
           if (isValid) {
-            onLogin();
+            triggerSuccessAnimation();
           } else {
             showToast({ title: 'Error', message: 'PIN incorrecto', type: 'error' });
             setPinState('');
@@ -58,7 +78,7 @@ export default function LoginScreen({ onLogin }: Props) {
           if (newPin === confirmPin) {
             await setPin(newPin);
             showToast({ title: 'Éxito', message: 'PIN configurado correctamente', type: 'success' });
-            onLogin();
+            triggerSuccessAnimation();
           } else {
             showToast({ title: 'Error', message: 'Los PINs no coinciden', type: 'error' });
             setPinState('');
@@ -91,8 +111,35 @@ export default function LoginScreen({ onLogin }: Props) {
     return '';
   };
 
+  const maxRadius = Math.sqrt(Math.pow(width, 2) + Math.pow(Dimensions.get('window').height, 2));
+
   return (
     <View style={styles.container}>
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFillObject,
+          {
+            backgroundColor: colors.primary.default,
+            opacity: opacityAnim,
+            transform: [
+              {
+                scale: scaleAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, maxRadius / 50], // 50 is half the initial circle size
+                }),
+              },
+            ],
+            borderRadius: maxRadius,
+            width: 100,
+            height: 100,
+            top: '50%',
+            left: '50%',
+            marginTop: -50,
+            marginLeft: -50,
+            zIndex: 10,
+          },
+        ]}
+      />
       <View style={styles.header}>
         <View style={styles.logoContainer}>
           <Logo size={100} />
