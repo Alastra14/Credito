@@ -49,7 +49,7 @@ export default function DashboardScreen() {
     } as any);
   }, [cargarDatos, onScroll]);
 
-  const activos = creditos.filter(c => c.estado === 'activo');
+  const activos = creditos.filter(c => c.estado === 'activo' && c.saldoActual > 0);
   const deudaTotal = activos.reduce((acc, c) => acc + c.saldoActual, 0);
 
   const hoy = new Date();
