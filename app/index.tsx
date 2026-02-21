@@ -49,24 +49,25 @@ export default function DashboardScreen() {
     } as any);
   }, [cargarDatos, onScroll]);
 
-  const activos = creditos.filter(c => c.estado === 'activo' && c.saldoActual > 0);
-  const deudaTotal = activos.reduce((acc, c) => acc + c.saldoActual, 0);
+  const activos = creditos.filter(c => c.estado === 'activo');
+  const activosConDeuda = activos.filter(c => c.saldoActual > 0);
+  const deudaTotal = activosConDeuda.reduce((acc, c) => acc + c.saldoActual, 0);
 
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
   const mesActual = hoy.getMonth() + 1;
   const anioActual = hoy.getFullYear();
 
-  const pagosEstesMes = activos.reduce((acc, c) => {
+  const pagosEstesMes = activosConDeuda.reduce((acc, c) => {
     const pagado = c.pagos.some(p => p.mes === mesActual && p.anio === anioActual && p.estado === 'pagado');
     return acc + (pagado ? 0 : (c.cuotaMensual ?? 0));
   }, 0);
 
-  const creditosPendientes = activos.filter(c =>
+  const creditosPendientes = activosConDeuda.filter(c =>
     !c.pagos.some(p => p.mes === mesActual && p.anio === anioActual && p.estado === 'pagado')
   );
 
-  const vencidos = activos.filter(c =>
+  const vencidos = activosConDeuda.filter(c =>
     c.pagos.some(p => p.estado === 'vencido')
   );
 
@@ -78,7 +79,7 @@ export default function DashboardScreen() {
 
   const proximosEventos: { id: string; tipo: 'pago' | 'corte' | 'ventana'; fecha: Date; titulo: string; desc: string; color: string }[] = [];
   
-  activos.forEach(c => {
+  activosConDeuda.forEach(c => {
     if (c.fechaCorte) {
       let nextCorte = new Date(anioActual, mesActual - 1, c.fechaCorte);
       if (nextCorte < hoy) {
