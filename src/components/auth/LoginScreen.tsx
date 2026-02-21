@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Defs, Rect, Mask, Circle } from 'react-native-svg';
 import { useTheme } from '@/lib/ThemeContext';
 import { spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
 import { hasPin, setPin, verifyPin } from '@/lib/auth';
 import { useToast } from '@/components/ui/Toast';
 import Logo from '@/components/ui/Logo';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface Props {
   onLogin: () => void;
@@ -21,8 +23,8 @@ export default function LoginScreen({ onLogin }: Props) {
   const [confirmPin, setConfirmPin] = useState('');
   const [step, setStep] = useState<'enter' | 'set' | 'confirm'>('enter');
   const { showToast } = useToast();
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const holeRadiusAnim = useRef(new Animated.Value(0)).current;
+  const loginUiOpacityAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     checkPinStatus();
@@ -37,17 +39,19 @@ export default function LoginScreen({ onLogin }: Props) {
   };
 
   const triggerSuccessAnimation = () => {
-    Animated.parallel([
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 600,
-        easing: Easing.out(Easing.exp),
+    const maxRadius = Math.sqrt(Math.pow(width, 2) + Math.pow(height, 2));
+    
+    Animated.sequence([
+      Animated.timing(loginUiOpacityAnim, {
+        toValue: 0,
+        duration: 200,
         useNativeDriver: true,
       }),
-      Animated.timing(opacityAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
+      Animated.timing(holeRadiusAnim, {
+        toValue: maxRadius,
+        duration: 600,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: false, // SVG animations don't support native driver
       })
     ]).start(() => {
       onLogin();
@@ -111,77 +115,64 @@ export default function LoginScreen({ onLogin }: Props) {
     return '';
   };
 
-  const maxRadius = Math.sqrt(Math.pow(width, 2) + Math.pow(Dimensions.get('window').height, 2));
-
   return (
-    <View style={styles.container}>
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFillObject,
-          {
-            backgroundColor: colors.primary.default,
-            opacity: opacityAnim,
-            transform: [
-              {
-                scale: scaleAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, maxRadius / 50], // 50 is half the initial circle size
-                }),
-              },
-            ],
-            borderRadius: maxRadius,
-            width: 100,
-            height: 100,
-            top: '50%',
-            left: '50%',
-            marginTop: -50,
-            marginLeft: -50,
-            zIndex: 10,
-          },
-        ]}
-      />
-      <View style={styles.header}>
-        <View style={styles.logoContainer}>
-          <Logo size={100} />
-        </View>
-        <Text style={styles.title}>Debtless</Text>
-        <Text style={styles.subtitle}>{getTitle()}</Text>
-      </View>
+    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
+      {/* SVG Mask Overlay */}
+      <Svg height="100%" width="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Defs>
+          <Mask id="mask" x="0" y="0" height="100%" width="100%">
+            <Rect height="100%" width="100%" fill="white" />
+            <AnimatedCircle cx="50%" cy="50%" r={holeRadiusAnim} fill="black" />
+          </Mask>
+        </Defs>
+        <Rect height="100%" width="100%" fill={colors.surface.background} mask="url(#mask)" />
+      </Svg>
 
-      <View style={styles.pinContainer}>
-        {[0, 1, 2, 3].map((i) => (
-          <View
-            key={i}
-            style={[
-              styles.pinDot,
-              pin.length > i && styles.pinDotFilled,
-            ]}
-          />
-        ))}
-      </View>
+      {/* Login UI */}
+      <Animated.View style={[styles.content, { opacity: loginUiOpacityAnim }]}>
+        <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <Logo size={100} />
+          </View>
+          <Text style={styles.title}>Debtless</Text>
+          <Text style={styles.subtitle}>{getTitle()}</Text>
+        </View>
 
-      <View style={styles.keypad}>
-        <View style={styles.keyRow}>
-          {renderKey('1')}
-          {renderKey('2')}
-          {renderKey('3')}
+        <View style={styles.pinContainer}>
+          {[0, 1, 2, 3].map((i) => (
+            <View
+              key={i}
+              style={[
+                styles.pinDot,
+                pin.length > i && styles.pinDotFilled,
+              ]}
+            />
+          ))}
         </View>
-        <View style={styles.keyRow}>
-          {renderKey('4')}
-          {renderKey('5')}
-          {renderKey('6')}
+
+        <View style={styles.keypad}>
+          <View style={styles.keyRow}>
+            {renderKey('1')}
+            {renderKey('2')}
+            {renderKey('3')}
+          </View>
+          <View style={styles.keyRow}>
+            {renderKey('4')}
+            {renderKey('5')}
+            {renderKey('6')}
+          </View>
+          <View style={styles.keyRow}>
+            {renderKey('7')}
+            {renderKey('8')}
+            {renderKey('9')}
+          </View>
+          <View style={styles.keyRow}>
+            <View style={styles.keyEmpty} />
+            {renderKey('0')}
+            {renderKey('backspace', 'backspace-outline')}
+          </View>
         </View>
-        <View style={styles.keyRow}>
-          {renderKey('7')}
-          {renderKey('8')}
-          {renderKey('9')}
-        </View>
-        <View style={styles.keyRow}>
-          <View style={styles.keyEmpty} />
-          {renderKey('0')}
-          {renderKey('backspace', 'backspace-outline')}
-        </View>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -190,7 +181,12 @@ function getStyles(colors: any) {
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.surface.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    content: {
+      flex: 1,
+      width: '100%',
       alignItems: 'center',
       justifyContent: 'center',
     },

@@ -88,14 +88,6 @@ function RootLayout() {
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <ToastProvider>
-        <LoginScreen onLogin={() => setIsAuthenticated(true)} />
-      </ToastProvider>
-    );
-  }
-
   return (
     <LanguageProvider>
       <TabBarProvider>
@@ -162,6 +154,11 @@ function RootLayout() {
           }}
         />
       </Tabs>
+      {!isAuthenticated && (
+        <View style={[StyleSheet.absoluteFill, { zIndex: 9999, elevation: 9999 }]}>
+          <LoginScreen onLogin={() => setIsAuthenticated(true)} />
+        </View>
+      )}
         </ToastProvider>
       </TabBarProvider>
     </LanguageProvider>
