@@ -35,7 +35,7 @@ export default function PagoForm({
   const { colors } = useTheme();
   const styles = getStyles(colors);
   const [monto, setMonto] = useState(
-    pagoExistente?.monto?.toString() ?? montoSugerido?.toString() ?? '0'
+    pagoExistente?.monto != null ? pagoExistente.monto.toFixed(2) : montoSugerido != null ? montoSugerido.toFixed(2) : '0'
   );
   const [nuevoSaldo, setNuevoSaldo] = useState('');
   const [tipo, setTipo] = useState<TipoPago>(pagoExistente?.tipo ?? 'normal');

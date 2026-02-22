@@ -51,6 +51,7 @@ export default function EditarCreditoScreen() {
     tipo: credito.tipo,
     saldoActual: credito.saldoActual,
     saldoOriginal: credito.saldoOriginal,
+    limiteCredito: credito.limiteCredito ?? undefined,
     tasaAnual: credito.tasaAnual,
     estado: credito.estado,
     plazoMeses: credito.plazoMeses ?? undefined,

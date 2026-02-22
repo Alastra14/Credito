@@ -46,7 +46,7 @@ export default function ProyeccionChart({ proyecciones }: Props) {
     backgroundColor: colors.surface.card,
     backgroundGradientFrom: colors.surface.card,
     backgroundGradientTo: colors.surface.card,
-    decimalPlaces: 0,
+    decimalPlaces: 2,
     color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
     labelColor: () => colors.text.secondary,
     propsForDots: { r: '3' },
@@ -66,9 +66,9 @@ export default function ProyeccionChart({ proyecciones }: Props) {
         withDots={false}
         formatYLabel={v => {
           const n = Number(v);
-          if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-          if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}k`;
-          return `$${n}`;
+          if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+          if (n >= 1_000) return `$${(n / 1_000).toFixed(2)}k`;
+          return `$${n.toFixed(2)}`;
         }}
         style={styles.chart}
       />

@@ -33,13 +33,13 @@ export default function CreditoForm({ initialData, onSubmit, onCancel }: Props) 
   const styles = getStyles(colors);
   const [nombre, setNombre] = useState(initialData?.nombre ?? '');
   const [tipo, setTipo] = useState<TipoCredito>(initialData?.tipo ?? 'personal');
-  const [saldo, setSaldo] = useState(initialData?.saldoActual?.toString() ?? '');
-  const [limiteCredito, setLimiteCredito] = useState(initialData?.limiteCredito?.toString() ?? '');
-  const [tasa, setTasa] = useState(initialData?.tasaAnual?.toString() ?? '');
+  const [saldo, setSaldo] = useState(initialData?.saldoActual != null ? initialData.saldoActual.toFixed(2) : '');
+  const [limiteCredito, setLimiteCredito] = useState(initialData?.limiteCredito != null ? initialData.limiteCredito.toFixed(2) : '');
+  const [tasa, setTasa] = useState(initialData?.tasaAnual != null ? initialData.tasaAnual.toFixed(2) : '');
   const [estado, setEstado] = useState<EstadoCredito>(initialData?.estado ?? 'activo');
   const [plazo, setPlazo] = useState(initialData?.plazoMeses?.toString() ?? '');
-  const [cuota, setCuota] = useState(initialData?.cuotaMensual?.toString() ?? '');
-  const [pagoMinimo, setPagoMinimo] = useState(initialData?.pagoMinimo?.toString() ?? '');
+  const [cuota, setCuota] = useState(initialData?.cuotaMensual != null ? initialData.cuotaMensual.toFixed(2) : '');
+  const [pagoMinimo, setPagoMinimo] = useState(initialData?.pagoMinimo != null ? initialData.pagoMinimo.toFixed(2) : '');
   const [fechaCorte, setFechaCorte] = useState(initialData?.fechaCorte?.toString() ?? '');
   const [fechaLimite, setFechaLimite] = useState(initialData?.fechaLimitePago?.toString() ?? '');
   const [institucion, setInstitucion] = useState(initialData?.institucion ?? '');

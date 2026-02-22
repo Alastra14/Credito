@@ -53,12 +53,17 @@ export default function CreditoCard({ credito, onPress }: CreditoCardProps) {
           <Text style={styles.label}>Tasa</Text>
           <Text style={styles.valor}>{credito.tasaAnual.toFixed(2)}%</Text>
         </View>
-        {credito.cuotaMensual != null && (
+        {credito.tipo === 'tarjeta_credito' && credito.limiteCredito != null ? (
+          <View style={styles.campo}>
+            <Text style={styles.label}>Límite</Text>
+            <Text style={styles.valor}>{formatCurrency(credito.limiteCredito)}</Text>
+          </View>
+        ) : credito.cuotaMensual != null ? (
           <View style={styles.campo}>
             <Text style={styles.label}>Cuota</Text>
             <Text style={styles.valor}>{formatCurrency(credito.cuotaMensual)}</Text>
           </View>
-        )}
+        ) : null}
       </View>
 
       {totalPagos > 0 && (

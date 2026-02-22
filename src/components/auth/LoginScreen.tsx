@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Defs, Rect, Mask, Circle } from 'react-native-svg';
 import { useTheme } from '@/lib/ThemeContext';
 import { spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
 import { hasPin, setPin, verifyPin } from '@/lib/auth';
@@ -9,7 +8,6 @@ import { useToast } from '@/components/ui/Toast';
 import Logo from '@/components/ui/Logo';
 
 const { width, height } = Dimensions.get('window');
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface Props {
   onLogin: () => void;
@@ -23,8 +21,18 @@ export default function LoginScreen({ onLogin }: Props) {
   const [confirmPin, setConfirmPin] = useState('');
   const [step, setStep] = useState<'enter' | 'set' | 'confirm'>('enter');
   const { showToast } = useToast();
-  const holeRadiusAnim = useRef(new Animated.Value(0)).current;
-  const loginUiOpacityAnim = useRef(new Animated.Value(1)).current;
+  
+  // Animaciones para la transición sofisticada
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const opacityAnim = useRef(new Animated.Value(1)).current;
+  const translateYAnim = useRef(new Animated.Value(0)).current;
+  const dialRotationAnim = useRef(new Animated.Value(0)).current;
+  const [isUnlocked, setIsUnlocked] = useState(false);
+
+  const spinInterpolate = dialRotationAnim.interpolate({
+    inputRange: [0, 1, 2, 3, 4],
+    outputRange: ['0deg', '144deg', '-72deg', '216deg', '0deg']
+  });
 
   useEffect(() => {
     checkPinStatus();
@@ -39,20 +47,24 @@ export default function LoginScreen({ onLogin }: Props) {
   };
 
   const triggerSuccessAnimation = () => {
-    const maxRadius = Math.sqrt(Math.pow(width, 2) + Math.pow(height, 2));
+    setIsUnlocked(true);
     
     Animated.sequence([
-      Animated.timing(loginUiOpacityAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(holeRadiusAnim, {
-        toValue: maxRadius,
-        duration: 600,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: false, // SVG animations don't support native driver
-      })
+      Animated.delay(300), // Pausa para ver el candado abierto
+      Animated.parallel([
+        Animated.timing(opacityAnim, {
+          toValue: 0,
+          duration: 600,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 5, // Zoom profundo como entrando a la caja fuerte
+          duration: 600,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
     ]).start(() => {
       onLogin();
     });
@@ -60,10 +72,20 @@ export default function LoginScreen({ onLogin }: Props) {
 
   const handleKeyPress = async (key: string) => {
     if (key === 'backspace') {
+      const newLen = Math.max(0, pin.length - 1);
       setPinState(prev => prev.slice(0, -1));
+      Animated.spring(dialRotationAnim, {
+        toValue: newLen,
+        useNativeDriver: true,
+      }).start();
     } else if (pin.length < 4) {
       const newPin = pin + key;
       setPinState(newPin);
+      
+      Animated.spring(dialRotationAnim, {
+        toValue: newPin.length,
+        useNativeDriver: true,
+      }).start();
 
       if (newPin.length === 4) {
         if (step === 'enter') {
@@ -73,11 +95,19 @@ export default function LoginScreen({ onLogin }: Props) {
           } else {
             showToast({ title: 'Error', message: 'PIN incorrecto', type: 'error' });
             setPinState('');
+            Animated.spring(dialRotationAnim, {
+              toValue: 0,
+              useNativeDriver: true,
+            }).start();
           }
         } else if (step === 'set') {
           setConfirmPin(newPin);
           setPinState('');
           setStep('confirm');
+          Animated.spring(dialRotationAnim, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
         } else if (step === 'confirm') {
           if (newPin === confirmPin) {
             await setPin(newPin);
@@ -88,6 +118,10 @@ export default function LoginScreen({ onLogin }: Props) {
             setPinState('');
             setConfirmPin('');
             setStep('set');
+            Animated.spring(dialRotationAnim, {
+              toValue: 0,
+              useNativeDriver: true,
+            }).start();
           }
         }
       }
@@ -116,24 +150,29 @@ export default function LoginScreen({ onLogin }: Props) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
-      {/* SVG Mask Overlay */}
-      <Svg height="100%" width="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Defs>
-          <Mask id="mask" x="0" y="0" height="100%" width="100%">
-            <Rect height="100%" width="100%" fill="white" />
-            <AnimatedCircle cx="50%" cy="50%" r={holeRadiusAnim} fill="black" />
-          </Mask>
-        </Defs>
-        <Rect height="100%" width="100%" fill={colors.surface.background} mask="url(#mask)" />
-      </Svg>
-
+    <Animated.View 
+      style={[
+        styles.container, 
+        { 
+          backgroundColor: colors.surface.background,
+          opacity: opacityAnim,
+          transform: [
+            { scale: scaleAnim },
+            { translateY: translateYAnim }
+          ]
+        }
+      ]}
+    >
       {/* Login UI */}
-      <Animated.View style={[styles.content, { opacity: loginUiOpacityAnim }]}>
+      <View style={styles.content}>
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Logo size={100} />
-          </View>
+          <Animated.View style={[styles.logoContainer, { transform: [{ rotate: spinInterpolate }] }]}>
+            <Ionicons 
+              name={isUnlocked ? "lock-open" : "lock-closed"} 
+              size={100} 
+              color={colors.primary.default} 
+            />
+          </Animated.View>
           <Text style={styles.title}>Debtless</Text>
           <Text style={styles.subtitle}>{getTitle()}</Text>
         </View>
@@ -172,8 +211,8 @@ export default function LoginScreen({ onLogin }: Props) {
             {renderKey('backspace', 'backspace-outline')}
           </View>
         </View>
-      </Animated.View>
-    </View>
+      </View>
+    </Animated.View>
   );
 }
 

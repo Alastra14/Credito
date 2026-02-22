@@ -29,7 +29,7 @@ export default function TasasChart({ creditos }: Props) {
     backgroundColor: colors.surface.card,
     backgroundGradientFrom: colors.surface.card,
     backgroundGradientTo: colors.surface.card,
-    decimalPlaces: 1,
+    decimalPlaces: 2,
     color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
     labelColor: () => colors.text.secondary,
     style: { borderRadius: 8 },

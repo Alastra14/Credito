@@ -5,7 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/lib/ThemeContext';
 
 const { width } = Dimensions.get('window');
-const DOLLAR_COUNT = 8;
+const DOLLAR_COUNT = 12;
+
+const CURRENCY_ICONS = [
+  'logo-usd', // Dólar / Peso
+  'logo-euro', // Euro
+  'logo-yen', // Yen
+  'logo-bitcoin', // Crypto (opcional, o puedes usar otro)
+];
 
 export default function FloatingDollars() {
   const { colors } = useTheme();
@@ -17,6 +24,7 @@ export default function FloatingDollars() {
       scale: 0.4 + Math.random() * 1.5,
       delay: Math.random() * 2000,
       duration: 4000 + Math.random() * 3000,
+      icon: CURRENCY_ICONS[Math.floor(Math.random() * CURRENCY_ICONS.length)],
     }))
   ).current;
 
@@ -66,7 +74,7 @@ export default function FloatingDollars() {
               opacity,
             }}
           >
-            <Ionicons name="logo-usd" size={32} color={colors.text.muted} />
+            <Ionicons name={item.icon as any} size={32} color={colors.text.muted} />
           </Animated.View>
         );
       })}

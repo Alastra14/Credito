@@ -13,6 +13,7 @@ export function formatCurrency(amount: number): string {
     style: 'currency',
     currency: 'MXN',
     minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
 }
 
@@ -88,7 +89,7 @@ export function today(): string {
 
 export function parseNumber(value: string): number {
   const n = parseFloat(value.replace(',', '.'));
-  return isNaN(n) ? 0 : n;
+  return isNaN(n) ? 0 : Math.round(n * 100) / 100;
 }
 
 export function parseOptionalInt(value: string): number | undefined {
@@ -100,5 +101,5 @@ export function parseOptionalInt(value: string): number | undefined {
 export function parseOptionalFloat(value: string): number | undefined {
   if (!value || value.trim() === '') return undefined;
   const n = parseFloat(value.replace(',', '.'));
-  return isNaN(n) ? undefined : n;
+  return isNaN(n) ? undefined : Math.round(n * 100) / 100;
 }

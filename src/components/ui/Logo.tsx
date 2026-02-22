@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, StyleSheet, Image } from 'react-native';
 import { useTheme } from '@/lib/ThemeContext';
 
 interface Props {
@@ -13,7 +12,10 @@ export default function Logo({ size = 60 }: Props) {
 
   return (
     <View style={styles.container}>
-      <Ionicons name="shield-checkmark" size={size * 0.6} color={colors.primary.default} />
+      <Image 
+        source={require('../../../assets/debtlessLogo1.png')} 
+        style={{ width: size, height: size, borderRadius: size / 2, resizeMode: 'cover' }} 
+      />
     </View>
   );
 }

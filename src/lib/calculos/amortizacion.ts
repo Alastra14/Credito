@@ -9,11 +9,12 @@ export function calcularCuotaMensual(
   tasaAnual: number,
   mesesRestantes: number,
 ): number {
-  if (mesesRestantes <= 0) return saldo;
+  if (mesesRestantes <= 0) return Math.round(saldo * 100) / 100;
   const r = tasaAnual / 12 / 100;
-  if (r === 0) return saldo / mesesRestantes;
+  if (r === 0) return Math.round((saldo / mesesRestantes) * 100) / 100;
   const factor = Math.pow(1 + r, mesesRestantes);
-  return (saldo * r * factor) / (factor - 1);
+  const cuota = (saldo * r * factor) / (factor - 1);
+  return Math.round(cuota * 100) / 100;
 }
 
 /**

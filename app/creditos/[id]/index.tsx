@@ -145,6 +145,9 @@ export default function CreditoDetailScreen() {
         <CardContent>
           <View style={styles.grid}>
             <DataItem label="Saldo actual" value={formatCurrency(credito.saldoActual)} />
+            {credito.limiteCredito != null && (
+              <DataItem label="Límite de crédito" value={formatCurrency(credito.limiteCredito)} />
+            )}
             <DataItem label="Tasa anual" value={`${credito.tasaAnual.toFixed(2)}%`} />
             {credito.cuotaMensual != null && (
               <DataItem label="Cuota mensual" value={formatCurrency(credito.cuotaMensual)} />

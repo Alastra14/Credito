@@ -155,8 +155,12 @@ function RootLayout() {
         />
       </Tabs>
       {!isAuthenticated && (
-        <View style={[StyleSheet.absoluteFill, { zIndex: 9999, elevation: 9999 }]}>
-          <LoginScreen onLogin={() => setIsAuthenticated(true)} />
+        <View style={[StyleSheet.absoluteFill, { zIndex: 9999, elevation: 9999 }]} pointerEvents="box-none">
+          <LoginScreen onLogin={() => {
+            setTimeout(() => {
+              setIsAuthenticated(true);
+            }, 400); // Wait for animation to finish
+          }} />
         </View>
       )}
         </ToastProvider>
