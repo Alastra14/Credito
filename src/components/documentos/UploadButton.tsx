@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '@/components/ui/Button';
 import { MAX_FILE_SIZE_BYTES } from '@/lib/constants';
