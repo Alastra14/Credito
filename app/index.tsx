@@ -5,7 +5,7 @@ import {
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { CreditoConPagos } from '@/types';
-import { getCreditos, getCreditoById, createPago, updateCreditoSaldo } from '@/lib/database';
+import { getCreditosConPagos, createPago, updateCreditoSaldo } from '@/lib/database';
 import { spacing, borderRadius, fontSize, shadow, typography } from '@/lib/theme';
 import { useTheme } from '@/lib/ThemeContext';
 import { formatCurrency } from '@/lib/utils';
@@ -28,11 +28,8 @@ export default function DashboardScreen() {
   const cargarDatos = useCallback(async () => {
     setLoading(true);
     try {
-      const lista = await getCreditos();
-      const conPagos = await Promise.all(
-        lista.map(c => getCreditoById(c.id))
-      );
-      setCreditos(conPagos.filter(Boolean) as CreditoConPagos[]);
+      const todos = await getCreditosConPagos();
+      setCreditos(todos);
     } finally {
       setLoading(false);
     }

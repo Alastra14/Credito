@@ -155,6 +155,22 @@ export default function ConfiguracionScreen() {
         return;
       }
 
+      // Validate SQLite magic bytes
+      const headerBase64 = await FileSystem.readAsStringAsync(file.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+        length: 16,
+        position: 0,
+      });
+      // "SQLite format 3\0" starts with "U1FMaXRl" in base64
+      if (!headerBase64.startsWith('U1FMaXRl')) {
+        showToast({
+          title: 'Archivo corrupto',
+          message: 'El archivo seleccionado no es una base de datos SQLite válida.',
+          type: 'error'
+        });
+        return;
+      }
+
       setDbToImport(file.uri);
     } catch (error) {
       console.error(error);

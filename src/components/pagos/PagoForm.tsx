@@ -71,6 +71,9 @@ export default function PagoForm({
         setMonto(prev => prev + '.');
       }
     } else {
+      // Limit to 2 decimal places
+      const dotIndex = monto.indexOf('.');
+      if (dotIndex !== -1 && monto.length - dotIndex > 2) return;
       setMonto(prev => (prev === '0' ? key : prev + key));
     }
   };

@@ -8,6 +8,7 @@ import { cancelNotificationsForCredito, schedulePaymentReminders } from '@/lib/n
 import { spacing, fontSize } from '@/lib/theme';
 import { useTheme } from '@/lib/ThemeContext';
 import { useScrollHideTabBar } from '@/lib/useScrollHideTabBar';
+import { useToast } from '@/components/ui/Toast';
 
 export default function EditarCreditoScreen() {
   const { colors } = useTheme();
@@ -15,6 +16,7 @@ export default function EditarCreditoScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [credito, setCredito] = useState<CreditoConPagos | null>(null);
   const { onScroll } = useScrollHideTabBar();
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (id) getCreditoById(id).then(setCredito);
@@ -35,8 +37,9 @@ export default function EditarCreditoScreen() {
         new Date().getFullYear(),
       );
     }
+    showToast({ title: 'Éxito', message: 'Crédito actualizado correctamente', type: 'success' });
     router.back();
-  }, [id]);
+  }, [id, showToast]);
 
   if (!credito) {
     return (

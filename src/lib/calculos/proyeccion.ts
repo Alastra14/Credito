@@ -30,12 +30,12 @@ export function calcularProyeccion(
 ): ProyeccionCredito {
   const cuotaBase =
     (credito.cuotaMensual ??
-      calcularCuotaMensual(credito.saldoActual, credito.tasaAnual, credito.plazoMeses ?? 360)) +
+      calcularCuotaMensual(credito.saldoActual, credito.tasaAnual, credito.plazoMeses ?? 60)) +
     pagoExtra;
   const tabla = calcularTablaAmortizacion(
     credito.saldoActual,
     credito.tasaAnual,
-    credito.plazoMeses ?? 360,
+    credito.plazoMeses ?? 60,
     cuotaBase,
   );
 

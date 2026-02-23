@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Animated, Easing 
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/lib/ThemeContext';
 import { spacing, borderRadius, fontSize, shadow } from '@/lib/theme';
-import { hasPin, setPin, verifyPin } from '@/lib/auth';
+import { hasPin, setPin, verifyPin, isLockedOut } from '@/lib/auth';
 import { useToast } from '@/components/ui/Toast';
 import Logo from '@/components/ui/Logo';
 
@@ -20,6 +20,7 @@ export default function LoginScreen({ onLogin }: Props) {
   const [isSettingPin, setIsSettingPin] = useState(false);
   const [confirmPin, setConfirmPin] = useState('');
   const [step, setStep] = useState<'enter' | 'set' | 'confirm'>('enter');
+  const [lockoutMsg, setLockoutMsg] = useState('');
   const { showToast } = useToast();
   
   // Animaciones para la transición sofisticada
@@ -89,11 +90,31 @@ export default function LoginScreen({ onLogin }: Props) {
 
       if (newPin.length === 4) {
         if (step === 'enter') {
-          const isValid = await verifyPin(newPin);
-          if (isValid) {
+          const lockStatus = isLockedOut();
+          if (lockStatus.locked) {
+            setLockoutMsg(`Bloqueado por ${lockStatus.remainingSeconds}s`);
+            showToast({ title: 'Bloqueado', message: `Demasiados intentos. Espera ${lockStatus.remainingSeconds} segundos.`, type: 'error' });
+            setPinState('');
+            Animated.spring(dialRotationAnim, {
+              toValue: 0,
+              useNativeDriver: true,
+            }).start();
+            return;
+          }
+          const result = await verifyPin(newPin);
+          if (result.success) {
+            setLockoutMsg('');
             triggerSuccessAnimation();
+          } else if (result.lockedSeconds) {
+            setLockoutMsg(`Bloqueado por ${result.lockedSeconds}s`);
+            showToast({ title: 'Bloqueado', message: `Demasiados intentos fallidos. Espera ${result.lockedSeconds} segundos.`, type: 'error' });
+            setPinState('');
+            Animated.spring(dialRotationAnim, {
+              toValue: 0,
+              useNativeDriver: true,
+            }).start();
           } else {
-            showToast({ title: 'Error', message: 'PIN incorrecto', type: 'error' });
+            showToast({ title: 'Error', message: `PIN incorrecto. ${result.attemptsLeft} intentos restantes.`, type: 'error' });
             setPinState('');
             Animated.spring(dialRotationAnim, {
               toValue: 0,

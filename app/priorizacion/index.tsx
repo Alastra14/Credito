@@ -37,6 +37,12 @@ export default function PriorizacionScreen() {
   function calcular() {
     const presup = parseFloat(presupuesto) || sumaMins;
     if (creditos.length === 0) return;
+    if (presup < sumaMins) {
+      // Budget must cover at least minimum payments
+      const res = calcularEstrategias(creditos, sumaMins);
+      setResultado(res);
+      return;
+    }
     const res = calcularEstrategias(creditos, presup);
     setResultado(res);
   }

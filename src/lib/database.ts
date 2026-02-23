@@ -273,6 +273,21 @@ export async function updateCredito(id: string, data: Partial<CreditoFormData>):
 
 export async function deleteCredito(id: string): Promise<void> {
   const db = await getDb();
+  // Clean up physical document files before deleting the credit
+  const docs = await db.getAllAsync<{ uri: string }>(
+    'SELECT uri FROM documentos WHERE creditoId = ?',
+    [id],
+  );
+  for (const doc of docs) {
+    try {
+      const info = await FileSystem.getInfoAsync(doc.uri);
+      if (info.exists) {
+        await FileSystem.deleteAsync(doc.uri, { idempotent: true });
+      }
+    } catch (_) { /* file may already be gone */ }
+  }
+  await db.runAsync('DELETE FROM documentos WHERE creditoId = ?', [id]);
+  await db.runAsync('DELETE FROM pagos WHERE creditoId = ?', [id]);
   await db.runAsync('DELETE FROM creditos WHERE id = ?', [id]);
 }
 

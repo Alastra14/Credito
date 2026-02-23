@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet } from 'react-native';
-import { spacing, fontSize } from '@/lib/theme';
+
 import { ThemeProvider, useTheme } from '@/lib/ThemeContext';
 import { requestNotificationPermissions, scheduleRemindersForAllCreditos } from '@/lib/notifications';
 import { getCreditos } from '@/lib/database';
@@ -88,6 +86,21 @@ function RootLayout() {
     );
   }
 
+  if (!isAuthenticated) {
+    return (
+      <LanguageProvider>
+        <ToastProvider>
+          <StatusBar style={theme === 'dark' ? 'light' : 'dark'} backgroundColor="transparent" translucent />
+          <LoginScreen onLogin={() => {
+            setTimeout(() => {
+              setIsAuthenticated(true);
+            }, 400);
+          }} />
+        </ToastProvider>
+      </LanguageProvider>
+    );
+  }
+
   return (
     <LanguageProvider>
       <TabBarProvider>
@@ -154,15 +167,6 @@ function RootLayout() {
           }}
         />
       </Tabs>
-      {!isAuthenticated && (
-        <View style={[StyleSheet.absoluteFill, { zIndex: 9999, elevation: 9999 }]} pointerEvents="box-none">
-          <LoginScreen onLogin={() => {
-            setTimeout(() => {
-              setIsAuthenticated(true);
-            }, 400); // Wait for animation to finish
-          }} />
-        </View>
-      )}
         </ToastProvider>
       </TabBarProvider>
     </LanguageProvider>
