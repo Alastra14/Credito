@@ -55,6 +55,7 @@ function getStyles(colors: any) {
   },
   inputError: {
     borderColor: colors.destructive.default,
+    borderWidth: 2,
   },
   error: {
     fontSize: fontSize.xs,

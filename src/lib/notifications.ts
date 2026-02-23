@@ -154,6 +154,9 @@ export async function scheduleRemindersForAllCreditos(
     fechaCorte: number | null;
   }>,
 ): Promise<void> {
+  // Cancelar TODAS las notificaciones previas para evitar duplicados
+  await Notifications.cancelAllScheduledNotificationsAsync();
+
   const now = new Date();
   const mes = now.getMonth() + 1;
   const anio = now.getFullYear();

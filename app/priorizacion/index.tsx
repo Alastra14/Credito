@@ -8,7 +8,7 @@ import EstrategiaCard from '@/components/priorizacion/EstrategiaCard';
 import ComparacionTabla from '@/components/priorizacion/ComparacionTabla';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { CreditoConPagos, ResultadoEstrategias } from '@/types';
-import { getCreditos } from '@/lib/database';
+import { getCreditosConPagos } from '@/lib/database';
 import { calcularEstrategias } from '@/lib/calculos/priorizacion';
 import { spacing, fontSize, borderRadius } from '@/lib/theme';
 import { useTheme } from '@/lib/ThemeContext';
@@ -25,8 +25,8 @@ export default function PriorizacionScreen() {
   const { onScroll, onTouchStart, onTouchEnd, scrollEventThrottle } = useScrollHideTabBar();
 
   const cargar = useCallback(async () => {
-    const cs = await getCreditos();
-    const activos = cs.filter(c => c.estado === 'activo') as CreditoConPagos[];
+    const cs = await getCreditosConPagos();
+    const activos = cs.filter(c => c.estado === 'activo');
     setCreditos(activos);
     const suma = activos.reduce((acc, c) => acc + (c.pagoMinimo ?? c.cuotaMensual ?? 0), 0);
     setSumaMins(suma);

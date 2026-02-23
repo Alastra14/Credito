@@ -92,7 +92,7 @@ function getStyles(colors: any) {
     backgroundColor: colors.surface.card,
     ...shadow.sm,
   },
-  triggerError: { borderColor: colors.destructive.default },
+  triggerError: { borderColor: colors.destructive.default, borderWidth: 2 },
   value: { fontSize: fontSize.md, fontWeight: '600', color: colors.text.primary },
   placeholder: { fontSize: fontSize.md, fontWeight: '600', color: colors.text.muted },
   error: { fontSize: fontSize.xs, fontWeight: '700', color: colors.destructive.default, marginTop: 6, textTransform: 'uppercase' },

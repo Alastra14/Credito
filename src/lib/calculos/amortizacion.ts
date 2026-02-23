@@ -35,6 +35,18 @@ export function calcularTablaAmortizacion(
 
   while (saldoActual > 0.01 && mes <= 600) {
     const interes = saldoActual * r;
+    // Protección: si la cuota no cubre el interés, la deuda crece indefinidamente
+    if (cuota <= interes && r > 0) {
+      // Registrar una fila de advertencia y salir del loop
+      rows.push({
+        mes,
+        cuota: Math.round(cuota * 100) / 100,
+        interes: Math.round(interes * 100) / 100,
+        capital: 0,
+        saldoRestante: Math.round(saldoActual * 100) / 100,
+      });
+      break;
+    }
     const capital = Math.min(cuota - interes, saldoActual);
     const pagoReal = capital + interes;
     saldoActual = Math.max(saldoActual - capital, 0);

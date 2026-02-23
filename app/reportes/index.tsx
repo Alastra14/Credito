@@ -10,7 +10,7 @@ import ProgresoChart from '@/components/charts/ProgresoChart';
 import ProyeccionChart from '@/components/charts/ProyeccionChart';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { CreditoConPagos, ProyeccionCredito } from '@/types';
-import { getCreditos } from '@/lib/database';
+import { getCreditosConPagos } from '@/lib/database';
 import { calcularProyeccion } from '@/lib/calculos/proyeccion';
 import { spacing, fontSize } from '@/lib/theme';
 import { useTheme } from '@/lib/ThemeContext';
@@ -28,8 +28,8 @@ export default function ReportesScreen() {
   const { showToast } = useToast();
 
   const cargar = useCallback(async () => {
-    const cs = await getCreditos();
-    const activos = cs.filter(c => c.estado === 'activo') as CreditoConPagos[];
+    const cs = await getCreditosConPagos();
+    const activos = cs.filter(c => c.estado === 'activo');
     setCreditos(activos);
     if (activos.length > 0) {
       setProyecciones(activos.slice(0, 5).map(c => calcularProyeccion(c)));

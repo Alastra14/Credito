@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
@@ -90,9 +90,22 @@ export default function PagosScreen() {
   }
 
   async function handleEliminar(pago: Pago) {
-    await cancelNotificationsForPago(pago.creditoId, pago.mes, pago.anio);
-    await deletePago(pago.id);
-    cargar();
+    Alert.alert(
+      'Eliminar pago',
+      '¿Estás seguro de que deseas eliminar este pago?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            await cancelNotificationsForPago(pago.creditoId, pago.mes, pago.anio);
+            await deletePago(pago.id);
+            cargar();
+          },
+        },
+      ],
+    );
   }
 
   const pendientes = creditos.filter(c => {
@@ -159,7 +172,7 @@ export default function PagosScreen() {
                 <PagoTabla
                   pagosEstado={[pagoEstado]}
                   anio={anio}
-                  onPagar={(_mesIndex, _pago) => abrirPago(c, mes)}
+                  onPagar={(_mesIndex, _pago) => abrirPago(c, mes - 1)}
                   onEliminar={handleEliminar}
                 />
               </View>

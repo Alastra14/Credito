@@ -42,7 +42,11 @@ export default function CreditoDetailScreen() {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  if (!credito) return null;
+  if (!credito) return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface.background }}>
+      <Text style={{ color: colors.text.secondary, fontSize: fontSize.md }}>Cargando...</Text>
+    </View>
+  );
 
   const pagadosCount = credito.pagos.filter(p => p.estado === 'pagado').length;
 
